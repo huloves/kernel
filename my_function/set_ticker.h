@@ -14,7 +14,7 @@ int set_ticker(int n_msecs)
     n_sec = n_msecs / 1000;
     n_usecs = (n_msecs % 1000) * 1000L;
 
-    //初始时间，tv.sec = 秒，tv.usec = 微秒
+    //剩下的时间，tv.sec = 秒，tv.usec = 微秒
     new_timeset.it_interval.tv_sec = n_sec;
     new_timeset.it_interval.tv_usec = n_usecs;
 
