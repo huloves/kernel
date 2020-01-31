@@ -6,7 +6,7 @@
 		;常量定义部分
 		core_code_seg_sel equ 0x38	;0011_1000B 内核代码段选择子
 		core_data_seg_sel equ 0x30	;0011_0000B 内核数据段选择子
-		core_routine_seg_sel equ 0x28	;0010_1000 系统公共例程代码段选择子
+		sys_routine_seg_sel equ 0x28	;0010_1000 系统公共例程代码段选择子
 		video_ram_seg_sel equ 0x20	;视频显示缓冲区选择子
 		core_stack_seg_sel equ 0x18	;内核堆栈段选择子
 		mem_0_4_gb_seg_sel equ 0x08	;整个0~4GB内存的段的选择子
@@ -75,9 +75,9 @@
 		mov ax,bx
 		mov bl,80
 		div bl
-		nul bl
+		mul bl
 		mov bx,ax
-		jmp .set_sursor
+		jmp .set_cursor
 
 	.put_0a:
 		cmp cl,0x0a
@@ -99,7 +99,7 @@
 
 	.roll_screen:
 		cmp bx,2000
-		jl .set_cureen
+		jl .set_cursor
 
 		push ds
 		push es
@@ -239,7 +239,7 @@ put_hex_dword:                              ;在当前光标处以十六进制形式显示
 		mov eax,core_data_seg_sel
 		mov ds,eax
 
-		mov eax,[rem_alloc]
+		mov eax,[ram_alloc]
 		add eax,ecx	;下一次分配是的起始地址
 
 		;这里应该有检测可用内存数量的指令
@@ -357,7 +357,7 @@ put_hex_dword:                              ;在当前光标处以十六进制形式显示
 					dw core_code_seg_sel
 
 		salt_item_len equ $-salt_4
-		salt_items equ ($-salt)/salt_items_len
+		salt_items equ ($-salt)/salt_item_len
 
 		message_1 db '  If you seen this message,that means we '
 				  db 'are now in protect mode,and the system '
@@ -409,7 +409,7 @@ put_hex_dword:                              ;在当前光标处以十六进制形式显示
 		and ebx,0xfffffe00	;是之512字节对齐
 		add ebx,512
 		test eax,0x000001ff	;测试用户程序大小是否正好是512的倍数
-		cmocnz eax,ebx
+		cmovnz eax,ebx
 
 		mov ecx,eax			;实际需要申请的内存数量
 		call sys_routine_seg_sel:allocate_memory
@@ -501,7 +501,7 @@ put_hex_dword:                              ;在当前光标处以十六进制形式显示
 		mov [es:edi-256],eax
 		mov ax,[esi+4]
 		mov [es:edi-252],ax
-	.b4
+	.b4:
 
 		pop ecx
 		pop esi
@@ -553,7 +553,7 @@ put_hex_dword:                              ;在当前光标处以十六进制形式显示
 		mov eax,0x80000004
 		cpuid
 		mov [cpu_brand + 0x20],eax
-		mov [epu_brand + 0x24],ebx
+		mov [cpu_brand + 0x24],ebx
 		mov [cpu_brand + 0x28],ecx
 		mov [cpu_brand + 0x2c],edx
 

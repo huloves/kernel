@@ -43,7 +43,7 @@
 
 		in al,0x92
 		or al,0000_0010B
-		mov 0x92,al
+		out 0x92,al
 
 		cli
 
@@ -54,7 +54,7 @@
 		;进入保护模式
 		jmp dword 0x0010:flush
 		
-		[bits]
+		[bits 32]
 	flush:
 		mov eax,0x0008
 		mov ds,eax
@@ -196,18 +196,18 @@
 								;输入：EAX = 线性基地址
 								;	   EBX = 断界限
 								;	   ECX = 属性（各属性都在原始
-												位置，其他没用到的位置0）
+								;			位置，其他没用到的位置0）
 								;返回：EDX:EAX = 完整的描述符
 		mov edx,eax
 		shl eax,16
 		or ax,bx	;低32位构造完成
 
 		and edx,0xffff0000
-		rol edx.8
+		rol edx,8
 		bswap edx	;装配基址的31~24和23~16位
 
 		xor bx,bx
-		or dex,ebx	;装配段界限的高4位
+		or edx,ebx	;装配段界限的高4位
 
 		or edx,ecx	;装配属性
 
