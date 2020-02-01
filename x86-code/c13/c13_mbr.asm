@@ -1,12 +1,12 @@
-		;
-		;
+		;代码清单13-1
+		;文件名：c13_mbr.asm 
 		;文件说明：硬盘主引导扇区代码
 		;创建日期：2020-1-30 19:55
 
-		core_base_address equ 0x00040000 ;常数，内核加载的起始内存地址
-		core_start_section equ 0x00000001;常数，内核的起始逻辑扇区号
+		core_base_address equ 0x00040000	;常数，内核加载的起始内存地址
+		core_start_sector equ 0x00000001	;常数，内核的起始逻辑扇区号
 
-		mov ax,cs
+		mov ax,cs						;设置堆栈段和栈指针
 		mov ss,ax
 		mov sp,0x7c00
 
@@ -14,14 +14,14 @@
 		mov eax,[cs:pgdt+0x7c00+0x02]	;GDT的32位物理地址
 		xor edx,edx
 		mov ebx,16
-		div ebx
+		div ebx 
 
 		mov ds,eax
 		mov ebx,edx
 
 		;跳过0#号描述符的槽位
 		;创建1#描述符，0~4GB数据段
-		mov dword [ebx+0x08],0x7c00ffff
+		mov dword [ebx+0x08],0x0000ffff
 		mov dword [ebx+0x0c],0x00cf9200
 
 		;2# 创建初始化代码段描述符
@@ -34,18 +34,18 @@
 
 		;4# 显示缓冲区描述符
 		mov dword [ebx+0x20],0x80007fff
-		mov dword [ebx+0x24],0x0040820b
+		mov dword [ebx+0x24],0x0040920b
 
 		;初始化GDTR
-		mov dword [cs:pgdt+0x7c00],39
+		mov word [cs: pgdt+0x7c00],39
 
-		lgdt [cs:pgdt+0x7c00]
+		lgdt [cs: pgdt+0x7c00]
 
 		in al,0x92
 		or al,0000_0010B
 		out 0x92,al
 
-		cli
+		cli 
 
 		mov eax,cr0
 		or eax,1
@@ -66,7 +66,7 @@
 		;加载系统核心程序
 		mov edi,core_base_address
 		
-		mov eax,core_start_section
+		mov eax,core_start_sector
 		mov ebx,edi
 		call read_hard_disk_0
 
@@ -85,7 +85,7 @@
 
 		;读取剩余扇区
 		mov ecx,eax
-		mov eax,core_start_section
+		mov eax,core_start_sector
 		inc eax
 	@2:
 		call read_hard_disk_0
@@ -108,7 +108,7 @@
 
 		;建立核心数据段描述符
 		mov eax,[edi+0x08]
-		mov ebx,[esi+0x0c]
+		mov ebx,[edi+0x0c]
 		sub ebx,eax
 		dec ebx
 		add eax,edi
@@ -147,35 +147,35 @@
 
 		mov dx,0x1f2
 		mov al,1
-		out dx,al	;读取扇区数
+		out dx,al			;读取扇区数
 		
-		inc dx	;0x1f3
+		inc dx				;0x1f3
 		pop eax
-		out dx,al	;LBA地址7~0
+		out dx,al			;LBA地址7~0
 
-		inc dx	;0x1f4
+		inc dx				;0x1f4
 		mov cl,8
 		shr eax,cl
-		out dx,al	;15~8
+		out dx,al			;15~8
 
-		inc dx	;0x1f5
+		inc dx				;0x1f5
 		shr eax,cl
-		out dx,al	;23~16
+		out dx,al			;23~16
 
 		inc dx
 		shr eax,cl
-		or al,0xe0	;第一硬盘，LBA地址27~24
+		or al,0xe0			;第一硬盘，LBA地址27~24
 		out dx,al
 
-		inc dx	;0x1f7，设置命令
-		mov al,0x20	;读命令
+		inc dx				;0x1f7，设置命令
+		mov al,0x20			;读命令
 		out dx,al
 
 	.waits:
 		in al,dx
-		add al,0x88
+		and al,0x88
 		cmp al,0x08
-		jnz .waits	;如果EFLAG的ZF位为0，则结果为1，说明硬盘在忙，继续循环，否则的话，继续下面的指令
+		jnz .waits			;如果EFLAG的ZF位为0，则结果为1，说明硬盘在忙，继续循环，否则的话，继续下面的指令
 
 		mov ecx,256
 		mov dx,0x1f0
@@ -200,22 +200,22 @@
 								;返回：EDX:EAX = 完整的描述符
 		mov edx,eax
 		shl eax,16
-		or ax,bx	;低32位构造完成
+		or ax,bx				;低32位构造完成
 
 		and edx,0xffff0000
 		rol edx,8
-		bswap edx	;装配基址的31~24和23~16位
+		bswap edx				;装配基址的31~24和23~16位
 
 		xor bx,bx
-		or edx,ebx	;装配段界限的高4位
+		or edx,ebx				;装配段界限的高4位
 
-		or edx,ecx	;装配属性
+		or edx,ecx				;装配属性
 
 		ret
 
 	;------------------------------------------------
-		pgdt dw 0
-			 dd 0x00007e00
+		pgdt	dw 0
+				dd 0x00007e00
 	;------------------------------------------------
 		times 510-($-$$) db 0
 						 db 0x55,0xaa
