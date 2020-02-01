@@ -6,33 +6,33 @@
 ;======================================================
 SECTION header vstart=0
 
-		program_length dd program_end
+		program_length	dd program_end		;用户程序长度，#0x00
 
-		head_len	dd header_end
+		head_len		dd header_end		;头部长度，0x04
 
-		stack_seg	dd 0
-		stack_len	dd 1
+		stack_seg		dd 0				;接收堆栈段选择子，0x08
+		stack_len		dd 1				;指定用户栈大小，，0x0c
 
 
-		pregentry	dd start
-		code_seg	dd section.code.start
-		code_len	dd code_end
+		pregentry		dd start			;用户程序入口，0x10
+		code_seg		dd section.code.start	;代码段位置，0x14
+		code_len		dd code_end				;代码段长度，0x18
 
-		data_seg	dd section.data.start
-		data_len	dd data_end
+		data_seg		dd section.data.start	;数据段位置，0x1c
+		data_len		dd data_end				;数据段长度，0x20
 
 ;------------------------------------------------------
 		;符号索引表
-		salt_items	dd (header_end-salt)/256
+		salt_items		dd (header_end-salt)/256	;有多少项，0x24
 
-		salt:								;0x0001:0000001
-			PrintString	db '@PrintString'	;加载到内存后，前四字节是例程的偏移地址，后两字节是段选择子
+		salt:								;0x0001:0000001，索引表，0x28
+		PrintString		db '@PrintString'	;加载到内存后，前四字节是例程的偏移地址，后两字节是段选择子
 					times 256-($-PrintString) db 0
 
-			TerminateProgram db  '@TerminateProgram'
+		TerminateProgram db  '@TerminateProgram'
 					times 256-($-TerminateProgram) db 0
 
-			ReadDiskData	db '@ReadDiskData'
+		ReadDiskData	db '@ReadDiskData'
 					times 256-($-ReadDiskData) db 0
 
 header_end:
@@ -49,6 +49,8 @@ SECTION data vstart=0
 
 data_end:
 
+;======================================================
+		[bits 32]
 ;======================================================
 SECTION code vstart=0
 start:
@@ -73,7 +75,7 @@ start:
 		call far [fs:PrintString]
 
 		mov ebx,buffer
-		call [fs:PrintString]
+		call far [fs:PrintString]
 
 		jmp far [fs:TerminateProgram]
 

@@ -4,29 +4,29 @@
 		;创建日期：2020-1-31 13:18
 
 		;常量定义部分
-		core_code_seg_sel equ 0x38	;0011_1000B 内核代码段选择子
-		core_data_seg_sel equ 0x30	;0011_0000B 内核数据段选择子
-		sys_routine_seg_sel equ 0x28	;0010_1000 系统公共例程代码段选择子
-		video_ram_seg_sel equ 0x20	;视频显示缓冲区选择子
-		core_stack_seg_sel equ 0x18	;内核堆栈段选择子
-		mem_0_4_gb_seg_sel equ 0x08	;整个0~4GB内存的段的选择子
+		core_code_seg_sel	equ 0x38	;0011_1000B 内核代码段选择子
+		core_data_seg_sel	equ 0x30	;0011_0000B 内核数据段选择子
+		sys_routine_seg_sel	equ 0x28	;0010_1000 系统公共例程代码段选择子
+		video_ram_seg_sel	equ 0x20	;视频显示缓冲区选择子
+		core_stack_seg_sel	equ 0x18	;内核堆栈段选择子
+		mem_0_4_gb_seg_sel	equ 0x08	;整个0~4GB内存的段的选择子
 
 		;--------------------------------------------------
 		;系统核心程序的头部
-		core_length dd core_end	;核心程序的总长度
+		core_length		dd core_end	;核心程序的总长度#00
 
-		sys_routine_seg dd section.sys_routine.start
-								;公共例程段的位置
+		sys_routine_seg	dd section.sys_routine.start
+									;公共例程段的位置#04
 
-		core_data_seg dd section.core_data.start
-								;核心数据段位置
+		core_data_seg	dd section.core_data.start
+									;核心数据段位置#08
 
-		core_code_seg dd section.core_code.start
-								;核心代码段位置
+		core_code_seg	dd section.core_code.start
+									;核心代码段位置#0c
 
 
-		core_entry dd start
-				   dw core_code_seg_sel
+		core_entry		dd start	;核心代码段入口点#10
+						dw core_code_seg_sel
 
 	;===================================================
 			[bits 32]
@@ -50,95 +50,95 @@
 			retf
 
 	;---------------------------------------------
-	put_char:			;在当前光标处显示一个字符,并推进
-						;光标。仅用于段内调用 
-						;输入：CL=字符ASCII码 
-		pushad
+	put_char:                                   ;在当前光标处显示一个字符,并推进
+                                            ;光标。仅用于段内调用 
+                                            ;输入：CL=字符ASCII码 
+         pushad
 
-		;取当前光标位置
-		mov dx,0x3d4
-		mov al,0x0e
-		out dx,al
-		inc dx
-		in al,dx
-		mov ah,al
+         ;以下取当前光标位置
+         mov dx,0x3d4
+         mov al,0x0e
+         out dx,al
+         inc dx                             ;0x3d5
+         in al,dx                           ;高字
+         mov ah,al
 
-		dec dx
-		mov al,0x0f
-		out dx,al
-		inc dx
-		in al,dx
-		mov bx,ax
+         dec dx                             ;0x3d4
+         mov al,0x0f
+         out dx,al
+         inc dx                             ;0x3d5
+         in al,dx                           ;低字
+         mov bx,ax                          ;BX=代表光标位置的16位数
 
-		cmp cl,0x0d
-		jnz .put_0a
-		mov ax,bx
-		mov bl,80
-		div bl
-		mul bl
-		mov bx,ax
-		jmp .set_cursor
+         cmp cl,0x0d                        ;回车符？
+         jnz .put_0a
+         mov ax,bx
+         mov bl,80
+         div bl
+         mul bl
+         mov bx,ax
+         jmp .set_cursor
 
-	.put_0a:
-		cmp cl,0x0a
-		jnz .put_other
-		add bx,80
-		jmp .roll_screen
+  .put_0a:
+         cmp cl,0x0a                        ;换行符？
+         jnz .put_other
+         add bx,80
+         jmp .roll_screen
 
-	.put_other:
-		push es
-		mov eax,video_ram_seg_sel
-		mov es,eax
-		shl bx,1
-		mov [es:bx],cl
-		pop es
+  .put_other:                               ;正常显示字符
+         push es
+         mov eax,video_ram_seg_sel          ;0xb8000段的选择子
+         mov es,eax
+         shl bx,1
+         mov [es:bx],cl
+         pop es
 
-		;将光标位置推进一个字符
-		shr bx,1
-		inc bx
+         ;以下将光标位置推进一个字符
+         shr bx,1
+         inc bx
 
-	.roll_screen:
-		cmp bx,2000
-		jl .set_cursor
+  .roll_screen:
+         cmp bx,2000                        ;光标超出屏幕？滚屏
+         jl .set_cursor
 
-		push ds
-		push es
-		mov eax,video_ram_seg_sel
-		mov ds,eax
-		mov es,eax
-		cld
-		mov esi,0xa0
-		mov edi,0x00
-		mov ecx,1920
-		rep movsd
-		mov bx,3840
-		mov ecx,80
-	.cls:
-		mov word [es:bx],0x0720
-		add bx,2
-		loop .cls
+         push ds
+         push es
+         mov eax,video_ram_seg_sel
+         mov ds,eax
+         mov es,eax
+         cld
+         mov esi,0xa0                       ;小心！32位模式下movsb/w/d 
+         mov edi,0x00                       ;使用的是esi/edi/ecx 
+         mov ecx,1920
+         rep movsd
+         mov bx,3840                        ;清除屏幕最底一行
+         mov ecx,80                         ;32位程序应该使用ECX
+  .cls:
+         mov word[es:bx],0x0720
+         add bx,2
+         loop .cls
 
-		pop es
-		pop ds
+         pop es
+         pop ds
 
-		mov bx,1920
+         mov bx,1920
 
-	.set_cursor:
-		mov dx,0x3d4
-        mov al,0x0e
-        out dx,al
-        inc dx                             ;0x3d5
-        mov al,bh
-        out dx,al
-        dec dx                             ;0x3d4
-        mov al,0x0f
-        out dx,al
-        inc dx                             ;0x3d5
-        mov al,bl
-        out dx,al
+  .set_cursor:
+         mov dx,0x3d4
+         mov al,0x0e
+         out dx,al
+         inc dx                             ;0x3d5
+         mov al,bh
+         out dx,al
+         dec dx                             ;0x3d4
+         mov al,0x0f
+         out dx,al
+         inc dx                             ;0x3d5
+         mov al,bl
+         out dx,al
 
-        popad
-        ret 
+         popad
+         ret 
 
 	;---------------------------------------------
 	read_hard_disk_0:                       ;从硬盘读取一个逻辑扇区
@@ -260,50 +260,50 @@ put_hex_dword:                              ;在当前光标处以十六进制形式显示
 		retf
 
 	;---------------------------------------------------
-	set_up_gdt_descriptor:			;在GDT内安装一个新的描述符
-									;输入：EDX:EAX = 描述符
-									;输出：CX = 描述符的选择子
-		push eax
-		push ebx
-		push edx
+	set_up_gdt_descriptor:                      ;在GDT内安装一个新的描述符
+                                            ;输入：EDX:EAX=描述符 
+                                            ;输出：CX=描述符的选择子
+         push eax
+         push ebx
+         push edx
+      
+         push ds
+         push es
+      
+         mov ebx,core_data_seg_sel          ;切换到核心数据段
+         mov ds,ebx
 
-		push ds
-		push es
+         sgdt [pgdt]                        ;以便开始处理GDT
 
-		mov ebx,core_data_seg_sel
-		mov ds,ebx
+         mov ebx,mem_0_4_gb_seg_sel
+         mov es,ebx
 
-		sgdt [pgdt]
+         movzx ebx,word [pgdt]              ;GDT界限 
+         inc bx                             ;GDT总字节数，也是下一个描述符偏移 
+         add ebx,[pgdt+2]                   ;下一个描述符的线性地址 
+      
+         mov [es:ebx],eax
+         mov [es:ebx+4],edx
+      
+         add word [pgdt],8                  ;增加一个描述符的大小   
+      
+         lgdt [pgdt]                        ;对GDT的更改生效 
+       
+         mov ax,[pgdt]                      ;得到GDT界限值
+         xor dx,dx
+         mov bx,8
+         div bx                             ;除以8，去掉余数
+         mov cx,ax                          
+         shl cx,3                           ;将索引号移到正确位置 
 
-		mov ebx,mem_0_4_gb_seg_sel
-		mov es,ebx
+         pop es
+         pop ds
 
-		movzx ebx, word [pgdt]
-		inc ebx
-		add ebx,[pgdt+2]
-
-		mov [es:ebx],eax
-		mov [es:ebx],edx
-
-		add word [pgdt],8
-
-		lgdt [pgdt]
-
-		mov ax,[pgdt]
-		xor dx,dx
-		mov bx,8
-		div bx
-		mov cx,ax
-		shl cx,3
-
-		pop es
-		pop ds
-
-		pop edx
-		pop ebx
-		pop eax
-
-		retf
+         pop edx
+         pop ebx
+         pop eax
+      
+         retf
 	;---------------------------------------------------
 	make_seg_descriptor:                    ;构造存储器和系统的段描述符
                                             ;输入：EAX=线性基地址
@@ -329,57 +329,57 @@ put_hex_dword:                              ;在当前光标处以十六进制形式显示
 	;====================================================
 	SECTION core_data vstart=0	;系统核心的数据段
 	;---------------------------------------------------
-		pgdt dw 0	;用于设置和修改GDT
-			 dd 0
+		pgdt             dw  0             ;用于设置和修改GDT 
+                          dd  0
 
-		ram_alloc dd 0x00100000	;下次分配内存的起始地址
+         ram_alloc        dd  0x00100000    ;下次分配内存时的起始地址
 
-		;符号地址检索表
-		salt:
-		salt_1		db '@PrintString'
-				times 256-($-salt_1) db 0
-					dd put_string
-					dw sys_routine_seg_sel
+         ;符号地址检索表
+         salt:
+         salt_1           db  '@PrintString'
+                     times 256-($-salt_1) db 0
+                          dd  put_string
+                          dw  sys_routine_seg_sel
 
-		salt_2		db '@ReadDiskData'
-				times 256-($-salt_2) db 0
-					dd read_hard_disk_0
-					dw sys_routine_seg_sel
+         salt_2           db  '@ReadDiskData'
+                     times 256-($-salt_2) db 0
+                          dd  read_hard_disk_0
+                          dw  sys_routine_seg_sel
 
-		salt_3		db '@PrintDwordAsHexString'
-				times 256-($-salt_3) db 0
-					dd put_hex_dword
-					dw sys_routine_seg_sel
+         salt_3           db  '@PrintDwordAsHexString'
+                     times 256-($-salt_3) db 0
+                          dd  put_hex_dword
+                          dw  sys_routine_seg_sel
 
-		salt_4		db '@TerminateProgram'
-				times 256-($-salt_4) db 0
-					dd return_point
-					dw core_code_seg_sel
+         salt_4           db  '@TerminateProgram'
+                     times 256-($-salt_4) db 0
+                          dd  return_point
+                          dw  core_code_seg_sel
 
-		salt_item_len equ $-salt_4
-		salt_items equ ($-salt)/salt_item_len
+         salt_item_len   equ $-salt_4
+         salt_items      equ ($-salt)/salt_item_len
 
-		message_1 db '  If you seen this message,that means we '
-				  db 'are now in protect mode,and the system '
-				  db 'core is loaded,and the video display '
-				  db 'routine works perfectly.',0x0d,0x0a,0
+         message_1        db  '  If you seen this message,that means we '
+                          db  'are now in protect mode,and the system '
+                          db  'core is loaded,and the video display '
+                          db  'routine works perfectly.',0x0d,0x0a,0
 
-		message_5 db '  Loading user program...',0
+         message_5        db  '  Loading user program...',0
+         
+         do_status        db  'Done.',0x0d,0x0a,0
+         
+         message_6        db  0x0d,0x0a,0x0d,0x0a,0x0d,0x0a
+                          db  '  User program terminated,control returned.',0
 
-		do_status db 'Done.',0x0d,0x0a,0
+         bin_hex          db '0123456789ABCDEF'
+                                            ;put_hex_dword子过程用的查找表 
+         core_buf   times 2048 db 0         ;内核用的缓冲区
 
-		message_6 db 0x0d,0x0a,0x0d,0x0a,0x0d,0x0a
-				  db ' User program terminated,control returned.',0
-		
-		bin_hex   db '0123456789ABCDEF'
+         esp_pointer      dd 0              ;内核用来临时保存自己的栈指针     
 
-		core_buf  times 2048 db 0
-
-		esp_pointer db 0
-
-		cpu_brnd0 db 0x0d,0x0a,' ',0
-		cpu_brand times 52 db 0
-		cpu_brnd1 db 0x0d,0x0a,0x0d,0x0a,0
+         cpu_brnd0        db 0x0d,0x0a,'  ',0
+         cpu_brand  times 52 db 0
+         cpu_brnd1        db 0x0d,0x0a,0x0d,0x0a,0
 
 	;====================================================
 	SECTION core_code vstart=0	;核心代码段
@@ -397,9 +397,9 @@ put_hex_dword:                              ;在当前光标处以十六进制形式显示
 		push es
 
 		mov eax,core_data_seg_sel
-		mov ds,eax
+		mov ds,eax						;切换DS到内核数据段
 
-		mov eax,esi	;读取程序头部数据
+		mov eax,esi						;读取程序头部数据
 		mov ebx,core_buf
 		call sys_routine_seg_sel:read_hard_disk_0
 
@@ -413,59 +413,59 @@ put_hex_dword:                              ;在当前光标处以十六进制形式显示
 
 		mov ecx,eax			;实际需要申请的内存数量
 		call sys_routine_seg_sel:allocate_memory
-		mov ebx,ecx	;EBX指向申请到的内存的首地址
-		push ebx	;保存该首地址
+		mov ebx,ecx			;EBX指向申请到的内存的首地址
+		push ebx			;保存该首地址
 		xor edx,edx
 		mov ecx,512
 		div ecx
 		mov ecx,eax	;总扇区数
 
-		mov eax,mem_0_4_gb_seg_sel
+		mov eax,mem_0_4_gb_seg_sel		;切换DS到0~4GB的数据段
 		mov ds,eax
 
-		mov eax,esi
+		mov eax,esi						;起始扇区号
 	.b1:
 		call sys_routine_seg_sel:read_hard_disk_0
 		inc eax
 		loop .b1
 
 		;建立程序头部段描述符
-		pop edi	;恢复程序装载的首地址
-		mov eax,edi	;程序头部的线性地址
-		mov ebx,[edi+0x04]	;段长度
-		dec ebx				;断界限
-		mov ecx,0x00409200	;属性，字节粒度的数据段描述符
+		pop edi							;恢复程序装载的首地址
+		mov eax,edi						;程序头部的线性地址
+		mov ebx,[edi+0x04]				;段长度
+		dec ebx							;断界限
+		mov ecx,0x00409200				;属性，字节粒度的数据段描述符
 		call sys_routine_seg_sel:make_seg_descriptor
 		call sys_routine_seg_sel:set_up_gdt_descriptor
 		mov [edi+0x04],cx
 
 		;建立程序代码段描述符
 		mov eax,edi
-		add eax,[edi+0x14]
-		mov ebx,[edi+0x18]
-		dec ebx
-		mov ecx,0x00409800
+		add eax,[edi+0x14]				;代码段起始线性地址
+		mov ebx,[edi+0x18]				;段长度
+		dec ebx							;断界限
+		mov ecx,0x00409800				;属性，字节粒度的代码段描述符
 		call sys_routine_seg_sel:make_seg_descriptor
 		call sys_routine_seg_sel:set_up_gdt_descriptor
 		mov [edi+0x14],cx
 
 		;建立程序数据段描述符
         mov eax,edi
-        add eax,[edi+0x1c]                 ;数据段起始线性地址
-        mov ebx,[edi+0x20]                 ;段长度
-        dec ebx                            ;段界限
-        mov ecx,0x00409200                 ;字节粒度的数据段描述符
+        add eax,[edi+0x1c]              ;数据段起始线性地址
+        mov ebx,[edi+0x20]              ;段长度
+        dec ebx                         ;段界限
+        mov ecx,0x00409200              ;字节粒度的数据段描述符
         call sys_routine_seg_sel:make_seg_descriptor
         call sys_routine_seg_sel:set_up_gdt_descriptor
         mov [edi+0x1c],cx
 
 		;建立程序堆栈段描述符
-		mov ecx,[edi+0x0c]
+		mov ecx,[edi+0x0c]				;4KB的倍率
 		mov ebx,0x000fffff
-		sub ebx,ecx
+		sub ebx,ecx						;得到段界限
 		mov eax,4096
 		mul dword [edi+0x0c]
-		mov ecx,eax
+		mov ecx,eax						;准备为堆栈分配内存
 		call sys_routine_seg_sel:allocate_memory
 		add eax,ecx
 		mov ecx,0x00c09600
@@ -475,14 +475,14 @@ put_hex_dword:                              ;在当前光标处以十六进制形式显示
 
 		;重定位SALT
 		mov eax,[edi+0x04]
-		mov es,eax
+		mov es,eax						;es指向用户程序头部
 		mov eax,core_data_seg_sel
 		mov ds,eax
 
 		cld
 
-		mov ecx,[es:0x24]
-		mov edi,0x28
+		mov ecx,[es:0x24]				;用户程序SALT条目数
+		mov edi,0x28					;用户程序内的SALT位于头部0x2c处
 	.b2:
 		push ecx
 		push edi
@@ -514,7 +514,7 @@ put_hex_dword:                              ;在当前光标处以十六进制形式显示
 		pop ecx
 		loop .b2
 
-		mov eax,[es:0x04]
+		mov ax,[es:0x04]
 
 		pop es
 		pop ds
@@ -529,71 +529,71 @@ put_hex_dword:                              ;在当前光标处以十六进制形式显示
 
 	;----------------------------------------------------
 	start:
-		mov ecx,core_data_seg_sel
-		mov ds,ecx
+         mov ecx,core_data_seg_sel           ;使ds指向核心数据段 
+         mov ds,ecx
 
-		mov ebx,message_1
-		call sys_routine_seg_sel:put_string
+         mov ebx,message_1
+         call sys_routine_seg_sel:put_string
+                                         
+         ;显示处理器品牌信息 
+         mov eax,0x80000002
+         cpuid
+         mov [cpu_brand + 0x00],eax
+         mov [cpu_brand + 0x04],ebx
+         mov [cpu_brand + 0x08],ecx
+         mov [cpu_brand + 0x0c],edx
+      
+         mov eax,0x80000003
+         cpuid
+         mov [cpu_brand + 0x10],eax
+         mov [cpu_brand + 0x14],ebx
+         mov [cpu_brand + 0x18],ecx
+         mov [cpu_brand + 0x1c],edx
 
-		;显示处理器品牌信息
-		mov eax,0x80000002
-		cpuid
-		mov [cpu_brand + 0x00],eax
-		mov [cpu_brand + 0x04],ebx
-		mov [cpu_brand + 0x08],ecx
-		mov [cpu_brand + 0x0c],edx
+         mov eax,0x80000004
+         cpuid
+         mov [cpu_brand + 0x20],eax
+         mov [cpu_brand + 0x24],ebx
+         mov [cpu_brand + 0x28],ecx
+         mov [cpu_brand + 0x2c],edx
 
-		mov eax,0x80000003
-		cpuid
-		mov [cpu_brand + 0x10],eax
-		mov [cpu_brand + 0x14],ebx
-		mov [cpu_brand + 0x18],ecx
-		mov [cpu_brand + 0x1c],edx
+         mov ebx,cpu_brnd0
+         call sys_routine_seg_sel:put_string
+         mov ebx,cpu_brand
+         call sys_routine_seg_sel:put_string
+         mov ebx,cpu_brnd1
+         call sys_routine_seg_sel:put_string
 
-		mov eax,0x80000004
-		cpuid
-		mov [cpu_brand + 0x20],eax
-		mov [cpu_brand + 0x24],ebx
-		mov [cpu_brand + 0x28],ecx
-		mov [cpu_brand + 0x2c],edx
+         mov ebx,message_5
+         call sys_routine_seg_sel:put_string
+         mov esi,50                          ;用户程序位于逻辑50扇区 
+         call load_relocate_program
+      
+         mov ebx,do_status
+         call sys_routine_seg_sel:put_string
+      
+         mov [esp_pointer],esp               ;临时保存堆栈指针
+       
+         mov ds,ax
+      
+         jmp far [0x10]                      ;控制权交给用户程序（入口点）
+                                             ;堆栈可能切换 
 
-		mov ebx,cpu_brnd0
-		call sys_routine_seg_sel:put_string
-		mov ebx,cpu_brand
-		call sys_routine_seg_sel:put_string
-		mov ebx,cpu_brnd1
-		call sys_routine_seg_sel:put_string
+return_point:                                ;用户程序返回点
+         mov eax,core_data_seg_sel           ;使ds指向核心数据段
+         mov ds,eax
 
-		mov ebx,message_5
-		call sys_routine_seg_sel:put_string
-		mov esi,50	;用户程序位于逻辑扇区50
-		call load_relocate_program
+         mov eax,core_stack_seg_sel          ;切换回内核自己的堆栈
+         mov ss,eax 
+         mov esp,[esp_pointer]
 
-		mov ebx,do_status
-		call sys_routine_seg_sel:put_string
+         mov ebx,message_6
+         call sys_routine_seg_sel:put_string
 
-		mov [esp_pointer],esp	;临时保存堆栈指针
-
-		mov ds,ax
-
-		jmp far [0x10]	;控制权交给用户程序
-						;堆栈可能切换
-
-	return_point:
-		mov eax,core_data_seg_sel
-		mov ds,eax
-
-		mov eax,core_stack_seg_sel
-		mov ss,eax
-		mov esp,[esp_pointer]
-
-		mov ebx,message_6
-		call sys_routine_seg_sel:put_string
-
-		;这里可以防止清楚用户程序各种描述符的指令
-		;也可以加载启动其他程序
-
-		hlt
+         ;这里可以放置清除用户程序各种描述符的指令
+         ;也可以加载并启动其它程序
+       
+         hlt
 
 	;==================================================
 	SECTION core_trail
