@@ -418,3 +418,63 @@ data_end:
 ;=======================================================================
 SECTION core_code vstart=0
 ;-----------------------------------------------------------------------
+start:
+		mov ecx,core_data_seg_sel
+		mov ds,ecx
+
+		mov ebx,message_1
+		call sys_routine_seg_sel:put_string
+
+		;显示处理器信息
+		mov eax,0x80000002
+		cpuid
+		mov [cpu_brand + 0x00],eax
+        mov [cpu_brand + 0x04],ebx
+        mov [cpu_brand + 0x08],ecx
+        mov [cpu_brand + 0x0c],edx
+
+		mov eax,0x80000003
+        cpuid
+        mov [cpu_brand + 0x10],eax
+        mov [cpu_brand + 0x14],ebx
+        mov [cpu_brand + 0x18],ecx
+        mov [cpu_brand + 0x1c],edx
+
+        mov eax,0x80000004
+        cpuid
+        mov [cpu_brand + 0x20],eax
+        mov [cpu_brand + 0x24],ebx
+        mov [cpu_brand + 0x28],ecx
+        mov [cpu_brand + 0x2c],edx
+
+		mov ebx,cpu_brnd0
+		call sys_routine_seg_sel:put_string
+		mov ebx,cpu_brand
+		call sys_routine_seg_sel:put_string
+		mov ebx,cpu_brnd1
+		call sys_routine_seg_sel:put_string
+
+		;安装为整个系统服务的调用门
+		mov edi,salt		;C-SALT的起始位置
+		mov ecx,salt_items	;C-SALT的条目数量，循环次数
+	.b3:
+		push ecx
+		mov eax,[edi+256]				;该条目入口点的32位偏移地址
+		mov ebx,[edi+260]				;该条目入口点的段选择子
+		mov cx,1_11_0_1100_000_00000B	;属性值，特权级为3的调用门（3以上的特权级
+										;才允许访问），0个参数（因为用寄存器
+										;传递参数，而没有使用栈）
+		call sys_routine_seg_sel:make_gate_descriptor
+		call sys_routine_seg_sel:set_up_gdt_descriptor
+		mov [edi+260],cx				;将返回的门描述符选择子回填
+		add edi,salt_item_len			;指向下一个C-SALT条目
+		pop ecx
+		loop .b3
+
+		;对门进行测试
+		mov ebx,message_2
+		call far [salt_1+256]			;通过门显示信息（偏移量将被忽略）
+
+		mov ebx,message_3
+		call sys_routine_seg_sel:put_string	;在内核中调用例程不需要通过门
+
