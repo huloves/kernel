@@ -417,6 +417,44 @@ data_end:
 
 ;=======================================================================
 SECTION core_code vstart=0
+;---------------------------------------------------------------
+append_to_tcb_link:				;在TCB链上追加任务控制块
+								;输入：ECX = TCB线性基地址
+		push eax
+		push edx
+		push ds
+		push es
+
+		mov eax,core_data_seg_sel
+		mov ds,eax
+		mov eax,mem_0_4_gb_seg_sel
+		mov es,eax
+
+		mov dword [es: ecx+0x00],0	;当前TCB指针域清零
+									;表示最后一个TCB
+
+		mov eax,[tcb_chain]			;TCB表头指针
+		or eax,eax					;判断链表是否为空
+		jz .notcb
+
+	.searc:
+		mov edx,eax
+		mov eax,[es: edx+0x00]
+		or eax,eax
+		jnz .searc
+
+		mov [es: edx+0x00],ecx
+		jmp retpc
+
+	.notcb:
+		mov [tcb_chain],ecx
+
+	.retpc:
+		pop es
+		pop ds
+		pop edx
+		pop eax
+
 ;-----------------------------------------------------------------------
 start:
 		mov ecx,core_data_seg_sel
@@ -478,3 +516,15 @@ start:
 		mov ebx,message_3
 		call sys_routine_seg_sel:put_string	;在内核中调用例程不需要通过门
 
+		;创建任务控制块
+		mov ecx,0x46
+		call sys_routine_seg_sel:allocate_memory
+		call append_to_tcb_link			;将任务控制块追加到TCB链表
+
+		push dword 50					;用户程序位于逻辑50扇区
+		push ecx						;压入任务控制块起始线性地址
+
+		call load_relocate_program
+
+		mov ebx,do_status
+		call sys_routine_seg_sel:put_string
