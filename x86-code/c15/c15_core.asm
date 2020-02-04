@@ -355,7 +355,26 @@ terminate_current_task:						;终止当前任务
 											;执行此任务时，当前任务正在
 											;运行中。此例程起始也是当前任务的
 											;一部分
-		
+		pushfd
+		mov edx,[esp]						;获得EFLAGS寄存器内容
+		add esp,4							;恢复堆栈指针
+
+		mov eax,core_data_seg_sel
+		mov ds,eax
+
+		test dx,0100_0000_0000_0000B		;测试NT位
+		jnz .b1								;NT=1，当前任务是嵌套的，到.b1出执行iret
+		mov eax,core_msg1					;当前任务不是嵌套的，直接切换到任务管理器
+		call sys_routine_seg_sel:put_string
+		jmp far [prgman_tss]				;切换到程序管理器任务
+
+	.b1:
+		mov ebx,core_msg0
+		call sys_routine_seg_sel:put_string
+		iretd								;切换到前一个任务
+
+	sys_routine_end:
+
 ;========================================================================
 SECTION core_data vstart=0
 ;------------------------------------------------------------------------

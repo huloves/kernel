@@ -49,6 +49,8 @@ SECTION data vstart=0
 data_end:
 
 ;=================================================================
+	[bits 32]
+;=================================================================
 SECTION code vstart=0
 start:
 	;任务启动时，DS指向头部段，也不需要设置堆栈，TSS中有记录，处理器自动获取
@@ -67,6 +69,8 @@ start:
 	mov [message_2],al
 
 	mov ebx,message_2
+	call far [fs:PrintString]
+
 	call far [fs:TerminateProgram]		;退出，并将控制权返回到核心程序
 
 code_end:
