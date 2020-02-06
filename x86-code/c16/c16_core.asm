@@ -4,13 +4,13 @@
 	;创建日期：2020-2-5 14:56
 
 	;常量定义部分
-	core_code_seg_sel	equ 0x38
-	core_data_seg_sel	equ 0x30
-	sys_routine_seg_sel	equ 0x28
-	video_ram_seg_sel	equ 0x20
-	core_stack_seg_sel	equ 0x18
-	mem_0_4_gb_seg_sel	equ 0x08
-
+	core_code_seg_sel	equ	0x38			;内核代码段选择子
+	core_data_seg_sel	equ 0x30			;内核数据段选择子
+	sys_routine_seg_sel	equ 0x28			;系统公共例程代码段选择子
+	video_ram_seg_sel	equ 0x20			;视频显示缓冲区段选择子
+	core_stack_seg_sel	equ 0x18			;内核堆栈段选择子
+	mem_0_4_gb_seg_sel	equ 0x08			;整个0~4GB内存的段的选择子
+	
 ;------------------------------------------------------------------------
 	;系统核心的头部，用于加载核心程序
 	core_length		dd core_end				;核心程序总长度0x00
@@ -489,7 +489,7 @@ SECTION core_data vstart=0
 					dd put_hex_dword
 					dw sys_routine_seg_sel
 
-	salt_4			db 'TerminateProgram'
+	salt_4			db '@TerminateProgram'
 				times 256-($-salt_4) db 0
 					dd terminate_current_task
 					dw sys_routine_seg_sel
@@ -519,7 +519,7 @@ SECTION core_data vstart=0
 	core_buf	times 512 db 0			;内核缓冲区
 
 	cpu_brnd0		db	0x0d,0x0a,'  ',0
-	cpu_brand	times 52 db	0
+	cpu_brand	times 52 db 0
 	cpu_brnd1		db	0x0d,0x0a,0x0d,0x0a,0
 
 	;任务控制链
@@ -579,7 +579,7 @@ fill_descriptor_in_ldt:                     ;在LDT内安装一个新的描述符
 
 ;---------------------------------------------------------------------
 load_relocate_program:						;加载并重定位用户程序
-											;输入：PUSH 逻辑扇区号
+											;输入：push 逻辑扇区号
 											;	   push 任务控制块基地址
 											;输出：无
 	pushad
@@ -624,7 +624,7 @@ load_relocate_program:						;加载并重定位用户程序
 	mov ds,eax
 
 	mov eax,[ebp+12*4]						;读取起始逻辑扇区号
-	mov esi,[ebp+11+4]						;读取TCB基地址
+	mov esi,[ebp+11*4]						;读取TCB基地址
 .b2:
 	mov ebx,[es:esi+0x06]					;读取可用的线性地址
 	add dword [es:esi+0x06],0x1000
@@ -708,7 +708,7 @@ load_relocate_program:						;加载并重定位用户程序
 	or cx,0000_0000_0000_0000B				;设置选择子的特权级为0
 
 	mov ebx,[es:esi+0x14]					;从TCB中获取TSS的线性地址
-	mov [es:esi+8],cx						;填写TSS的SS0域
+	mov [es:ebx+8],cx						;填写TSS的SS0域
 	mov edx,[es:esi+0x06]					;堆栈的高端线性地址
 	mov [es:ebx+4],edx						;填写TSS的ESP0域
 
@@ -741,12 +741,12 @@ load_relocate_program:						;加载并重定位用户程序
 	call sys_routine_seg_sel:make_seg_descriptor
 	mov ebx,esi
 	call fill_descriptor_in_ldt
-	or cx,0000_0000_0010B
+	or cx,0000_0000_0000_0010B
 
 	mov ebx,[es:esi+0x14]
 	mov [es:ebx+24],cx
 	mov edx,[es:esi+0x06]
-	mov [es:esi+20],edx
+	mov [es:ebx+20],edx
 
 
 	;重定位SALT
@@ -803,7 +803,7 @@ load_relocate_program:						;加载并重定位用户程序
 	mov [es:esi+0x10],cx					;登记LDT选择子到TCB中
 
 	mov ebx,[es:esi+0x14]					;从TCB中获取TSS的线性地址
-	mov [es:esi+ebx],cx						;填写TSS的LDT域
+	mov [es:ebx+96],cx						;填写TSS的LDT域
 
 	mov word [es:ebx+0],0					;反向链=0
 
@@ -951,7 +951,7 @@ start:
 	cmp esi,256							;仅低端1MB内对对应的页才是有效的
 	jl .b2								;esi小于256转移
 
-.b3:									;剩余的页表项置为0，不使用
+.b3:									;剩余的页表项置为0，无效
 	mov dword [es:ebx+esi*4],0x00000000
 	inc esi
 	cmp esi,1024
@@ -1028,7 +1028,7 @@ flush:
 	add dword [core_next_laddr],4096
 
 	;在程序管理器的TSS中设置必要的项目
-	mov word [es:ebx],0					;反向链=0
+	mov word [es:ebx+0],0					;反向链=0
 
 	mov eax,cr3
 	mov dword [es:ebx+28],eax			;登记cr3（PDBR）
@@ -1072,7 +1072,7 @@ flush:
 	call far [es:ecx+0x14]
 
 	mov ebx,message_5
-	call sys_routine_seg_sel
+	call sys_routine_seg_sel:put_string
 
 	hlt
 
