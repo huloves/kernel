@@ -4,7 +4,7 @@
 	;创建如期：2020-2-7 17:44
 
 	core_base_address	equ	0x00040000		;内核加载的起始内存地址
-	cire_start_sector	equ 0x00000001		;内核起始逻辑扇区号
+	core_start_sector	equ 0x00000001		;内核起始逻辑扇区号
 
 ;=====================================================================
 SECTION mbr vstart=0x00007c00
@@ -37,7 +37,7 @@ SECTION mbr vstart=0x00007c00
 	lgdt [es:pgdt]
 
 	in al,0x92								;南桥芯片内的端口
-	or al,0x0000_0010B
+	or al,0000_0010B
 	out 0x92,al								;打开A20
 
 	cli										;关闭中断，中断机制尚未工作
