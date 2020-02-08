@@ -9,6 +9,18 @@
 	idt_linear_address		equ	0x8001f000	;中断描述符表的线性基地址
 ;--------------------------------------------------------------------
 	;定义宏
+	%macro alloc_core_linear 0				;在内核空间分配虚拟内存
+		mov ebx,[core_tcb+0x06]
+		add dword [core_tcb+0x06],0x1000
+		call falt_4gb_code_seg_sel:alloc_inst_a_page
+	%endmacro
+;--------------------------------------------------------------------
+	%macro alloc_user_linear 0				;在用户空间中分配虚拟内存
+		mov ebx,[esi+0x06]
+		add dword [esi+0x06],0x1000
+		call falt_4gb_code_seg_sel:alloc_inst_a_page
+	%endmacro
+
 ;====================================================================
 SECTION core vstart=0x80040000
 
@@ -20,27 +32,255 @@ SECTION core vstart=0x80040000
 ;--------------------------------------------------------------------
 	[bits 32]
 ;--------------------------------------------------------------------
-general_interrupt_handler:					;通用的中断处理过程
-	push eax
+	;字符串显示例程（适用于平坦内存模型）
+put_string:									;显示0终止的字符串并移动光标
+											;输入：EBX=字符串的线性地址
+	push ebx
+	push ecx
 
-	mov al,0x20								;中断结束命令EOI
-	out 0xa0,al								;向从片发送
-	out 0x20,al								;向主片发送
+	cli										;硬件操作期间，关闭中断
 
-	pop eax
+.getc:
+	mov al,[ebx]
+	or cl,al								;判断是否为0
+	jz .exit								;如果为0，退出例程
+	call put_char
+	inc ebx
+	jmp .getc
 
-	iretd
-;--------------------------------------------------------------------
-general_exception_handler:					;通用的异常处理过程
-	mov ebx,excep_msg
-	call falt_4gb_code_seg_sel:put_string
-
-	hlt
-
-;--------------------------------------------------------------------
-rtm_0x70_interrupt_handle:					;实时时钟中断处理过程
-
+.exit:
 	
+	sti										;开放中断
+
+	pop ecx
+	pop ebx
+
+	retf									;段间返回
+
+;--------------------------------------------------------------------
+put_char:                                   ;在当前光标处显示一个字符,并推进
+                                            ;光标。仅用于段内调用 
+                                            ;输入：CL=字符ASCII码 
+         pushad
+
+         ;以下取当前光标位置
+         mov dx,0x3d4
+         mov al,0x0e
+         out dx,al
+         inc dx                             ;0x3d5
+         in al,dx                           ;高字
+         mov ah,al
+
+         dec dx                             ;0x3d4
+         mov al,0x0f
+         out dx,al
+         inc dx                             ;0x3d5
+         in al,dx                           ;低字
+         mov bx,ax                          ;BX=代表光标位置的16位数
+         and ebx,0x0000ffff                 ;准备使用32位寻址方式访问显存 
+         
+         cmp cl,0x0d                        ;回车符？
+         jnz .put_0a                         
+         
+         mov ax,bx                          ;以下按回车符处理 
+         mov bl,80
+         div bl
+         mul bl
+         mov bx,ax
+         jmp .set_cursor
+
+  .put_0a:
+         cmp cl,0x0a                        ;换行符？
+         jnz .put_other
+         add bx,80                          ;增加一行 
+         jmp .roll_screen
+
+  .put_other:                               ;正常显示字符
+         shl bx,1
+         mov [0x800b8000+ebx],cl            ;在光标位置处显示字符 
+
+         ;以下将光标位置推进一个字符
+         shr bx,1
+         inc bx
+
+  .roll_screen:
+         cmp bx,2000                        ;光标超出屏幕？滚屏
+         jl .set_cursor
+
+         cld
+         mov esi,0x800b80a0                 ;小心！32位模式下movsb/w/d 
+         mov edi,0x800b8000                 ;使用的是esi/edi/ecx 
+         mov ecx,1920
+         rep movsd
+         mov bx,3840                        ;清除屏幕最底一行
+         mov ecx,80                         ;32位程序应该使用ECX
+  .cls:
+         mov word [0x800b8000+ebx],0x0720
+         add bx,2
+         loop .cls
+
+         mov bx,1920
+
+  .set_cursor:
+         mov dx,0x3d4
+         mov al,0x0e
+         out dx,al
+         inc dx                             ;0x3d5
+         mov al,bh
+         out dx,al
+         dec dx                             ;0x3d4
+         mov al,0x0f
+         out dx,al
+         inc dx                             ;0x3d5
+         mov al,bl
+         out dx,al
+         
+         popad
+         
+         ret                              
+
+;--------------------------------------------------------------------
+read_hard_disk_0:                           ;从硬盘读取一个逻辑扇区（平坦模型） 
+                                            ;EAX=逻辑扇区号
+                                            ;EBX=目标缓冲区线性地址
+                                            ;返回：EBX=EBX+512
+         cli
+         
+         push eax 
+         push ecx
+         push edx
+      
+         push eax
+         
+         mov dx,0x1f2
+         mov al,1
+         out dx,al                          ;读取的扇区数
+
+         inc dx                             ;0x1f3
+         pop eax
+         out dx,al                          ;LBA地址7~0
+
+         inc dx                             ;0x1f4
+         mov cl,8
+         shr eax,cl
+         out dx,al                          ;LBA地址15~8
+
+         inc dx                             ;0x1f5
+         shr eax,cl
+         out dx,al                          ;LBA地址23~16
+
+         inc dx                             ;0x1f6
+         shr eax,cl
+         or al,0xe0                         ;第一硬盘  LBA地址27~24
+         out dx,al
+
+         inc dx                             ;0x1f7
+         mov al,0x20                        ;读命令
+         out dx,al
+
+  .waits:
+         in al,dx
+         and al,0x88
+         cmp al,0x08
+         jnz .waits                         ;不忙，且硬盘已准备好数据传输 
+
+         mov ecx,256                        ;总共要读取的字数
+         mov dx,0x1f0
+  .readw:
+         in ax,dx
+         mov [ebx],ax
+         add ebx,2
+         loop .readw
+
+         pop edx
+         pop ecx
+         pop eax
+      
+         sti
+      
+         retf                               ;远返回 
+
+;--------------------------------------------------------------------
+;汇编语言程序是极难一次成功，而且调试非常困难。这个例程可以提供帮助 
+put_hex_dword:                              ;在当前光标处以十六进制形式显示
+                                            ;一个双字并推进光标 
+                                            ;输入：EDX=要转换并显示的数字
+                                            ;输出：无
+         pushad
+
+         mov ebx,bin_hex                    ;指向核心地址空间内的转换表
+         mov ecx,8
+  .xlt:    
+         rol edx,4
+         mov eax,edx
+         and eax,0x0000000f
+         xlat
+      
+         push ecx
+         mov cl,al                           
+         call put_char
+         pop ecx
+       
+         loop .xlt
+      
+         popad
+         retf
+
+;--------------------------------------------------------------------
+set_up_gdt_descriptor:                      ;在GDT内安装一个新的描述符
+                                            ;输入：EDX:EAX=描述符 
+                                            ;输出：CX=描述符的选择子
+         push eax
+         push ebx
+         push edx
+
+         sgdt [pgdt]                        ;取得GDTR的界限和线性地址 
+
+         movzx ebx,word [pgdt]              ;GDT界限
+         inc bx                             ;GDT总字节数，也是下一个描述符偏移
+         add ebx,[pgdt+2]                   ;下一个描述符的线性地址
+
+         mov [ebx],eax
+         mov [ebx+4],edx
+
+         add word [pgdt],8                  ;增加一个描述符的大小
+
+         lgdt [pgdt]                        ;对GDT的更改生效
+
+         mov ax,[pgdt]                      ;得到GDT界限值
+         xor dx,dx
+         mov bx,8
+         div bx                             ;除以8，去掉余数
+         mov cx,ax
+         shl cx,3                           ;将索引号移到正确位置
+
+         pop edx
+         pop ebx
+         pop eax
+
+         retf
+;--------------------------------------------------------------------
+make_seg_descriptor:                        ;构造存储器和系统的段描述符
+                                            ;输入：EAX=线性基地址
+                                            ;      EBX=段界限
+                                            ;      ECX=属性。各属性位都在原始
+                                            ;          位置，无关的位清零 
+                                            ;返回：EDX:EAX=描述符
+         mov edx,eax
+         shl eax,16
+         or ax,bx                           ;描述符前32位(EAX)构造完毕
+
+         and edx,0xffff0000                 ;清除基地址中无关的位
+         rol edx,8
+         bswap edx                          ;装配基址的31~24和23~16  (80486+)
+
+         xor bx,bx
+         or edx,ebx                         ;装配段界限的高4位
+
+         or edx,ecx                         ;装配属性
+
+         retf
+
 ;--------------------------------------------------------------------
 make_gate_descriptor:                       ;构造门的描述符（调用门等）
                                             ;输入：EAX=门代码在段内偏移地址
@@ -63,6 +303,206 @@ make_gate_descriptor:                       ;构造门的描述符（调用门等）
          pop ebx
       
          retf                                   
+
+;--------------------------------------------------------------------
+allocate_a_4k_page:                         ;分配一个4KB的页
+                                            ;输入：无
+                                            ;输出：EAX=页的物理地址
+         push ebx
+         push ecx
+         push edx
+
+         xor eax,eax
+  .b1:
+         bts [page_bit_map],eax
+         jnc .b2
+         inc eax
+         cmp eax,page_map_len*8
+         jl .b1
+         
+         mov ebx,message_3
+         call flat_4gb_code_seg_sel:put_string
+         hlt                                ;没有可以分配的页，停机 
+         
+  .b2:
+         shl eax,12                         ;乘以4096（0x1000） 
+         
+         pop edx
+         pop ecx
+         pop ebx
+         
+         ret
+
+;--------------------------------------------------------------------
+alloc_inst_a_page:                          ;分配一个页，并安装在当前活动的
+                                            ;层级分页结构中
+                                            ;输入：EBX=页的线性地址
+         push eax
+         push ebx
+         push esi
+         
+         ;检查该线性地址所对应的页表是否存在
+         mov esi,ebx
+         and esi,0xffc00000
+         shr esi,20                         ;得到页目录索引，并乘以4 
+         or esi,0xfffff000                  ;页目录自身的线性地址+表内偏移 
+
+         test dword [esi],0x00000001        ;P位是否为“1”。检查该线性地址是 
+         jnz .b1                            ;否已经有对应的页表
+          
+         ;创建该线性地址所对应的页表 
+         call allocate_a_4k_page            ;分配一个页做为页表 
+         or eax,0x00000007
+         mov [esi],eax                      ;在页目录中登记该页表
+          
+  .b1:
+         ;开始访问该线性地址所对应的页表 
+         mov esi,ebx
+         shr esi,10
+         and esi,0x003ff000                 ;或者0xfffff000，因高10位是零 
+         or esi,0xffc00000                  ;得到该页表的线性地址
+         
+         ;得到该线性地址在页表内的对应条目（页表项） 
+         and ebx,0x003ff000
+         shr ebx,10                         ;相当于右移12位，再乘以4
+         or esi,ebx                         ;页表项的线性地址 
+         call allocate_a_4k_page            ;分配一个页，这才是要安装的页
+         or eax,0x00000007
+         mov [esi],eax 
+          
+         pop esi
+         pop ebx
+         pop eax
+         
+         retf  
+
+;--------------------------------------------------------------------
+create_copy_cur_pdir:                       ;创建新页目录，并复制当前页目录内容
+                                            ;输入：无
+                                            ;输出：EAX=新页目录的物理地址 
+         push esi
+         push edi
+         push ebx
+         push ecx
+         
+         call allocate_a_4k_page            
+         mov ebx,eax
+         or ebx,0x00000007
+         mov [0xfffffff8],ebx
+
+         invlpg [0xfffffff8]
+
+         mov esi,0xfffff000                 ;ESI->当前页目录的线性地址
+         mov edi,0xffffe000                 ;EDI->新页目录的线性地址
+         mov ecx,1024                       ;ECX=要复制的目录项数
+         cld
+         repe movsd 
+         
+         pop ecx
+         pop ebx
+         pop edi
+         pop esi
+         
+         retf
+
+;--------------------------------------------------------------------
+general_interrupt_handler:					;通用的中断处理过程
+	push eax
+
+	mov al,0x20								;中断结束命令EOI
+	out 0xa0,al								;向从片发送
+	out 0x20,al								;向主片发送
+
+	pop eax
+
+	iretd
+;--------------------------------------------------------------------
+general_exception_handler:					;通用的异常处理过程
+	mov ebx,excep_msg
+	call falt_4gb_code_seg_sel:put_string
+
+	hlt
+
+;--------------------------------------------------------------------
+rtm_0x70_interrupt_handle:					;实时时钟中断处理过程
+
+	pushad
+
+	mov al,0x20								;中断结束命令EOI
+	out 0xa0,al								;向从片发送
+	out 0x20,al								;向主片发送
+
+	mov al,0x0c								;寄存器C的索引，并开放NMI
+	out 0x70,al
+	in al,0x71								;读一下RTC的寄存器C，否则只发生一次中断
+											;不考虑闹钟和周期性中断的情况
+	;找到当前任务（状态为忙）在链表中的位置
+	mov eax,tcb_chain
+.b0:										;EAX = 链表头或当前TCB线性地址
+	mov ebx,[eax]							;EBX = 下一个TCB线性地址
+	or ebx,ebx
+	jz .itrn
+	cmp word [ebx+0x04],0xffff				;当前任务是否为忙
+	je .b1
+	mov eax,ebx								;定位到下一个TCB的线性地址
+	jmp .b0
+
+	;当前任务为忙，移到链表尾
+.b1:
+	mov ecx,[ebx]							;下游TCB的线性地址
+	mov [eax],ecx							;将当前任务从链表中拆除
+
+.b2:										;找到链表尾
+	mov edx,[eax]
+	or edx,edx								;判断是否已经是链尾
+	jz .b3
+	mov eax,edx
+	jmp .b2
+
+.b3:
+	mov [eax],ebx							;将忙的任务的TCB挂载链尾
+	mov dword [ebx],0x00000000				;将忙任务TCB标记为链尾
+
+	;链首搜索第一个空闲任务
+	mov eax,tcb_chain
+.b4:
+	mov eax,[eax]
+	or eax,eax
+	jz .irtn
+	cmp word [eax+0x04],0x0000
+	jnz .b4
+
+	;将空闲任务和当前任务状态都取反
+	not word [eax+0x04]
+	not word [ebx+0x04]
+	jmp far [eax+0x14]
+
+.irtn:
+	popad
+
+	iretd
+
+;--------------------------------------------------------------------
+terminate_current_task:                     ;终止当前任务
+                                            ;注意，执行此例程时，当前任务仍在
+                                            ;运行中。此例程其实也是当前任务的
+                                            ;一部分 
+         ;找当前任务（状态为忙的任务）在链表中的位置
+         mov eax,tcb_chain
+  .b0:                                      ;EAX=链表头或当前TCB线性地址
+         mov ebx,[eax]                      ;EBX=下一个TCB线性地址
+         cmp word [ebx+0x04],0xffff         ;是忙任务（当前任务）？
+         je .b1
+         mov eax,ebx                        ;定位到下一个TCB（的线性地址）
+         jmp .b0
+         
+  .b1:
+         mov word [ebx+0x04],0x3333         ;修改当前任务的状态为“退出”
+         
+  .b2:
+         hlt                                ;停机，等待程序管理器恢复运行时，
+                                            ;将其回收 
+         jmp .b2            
 
 ;--------------------------------------------------------------------
 	pgdt			dw	0					;用于设置和修改GDT
@@ -132,6 +572,33 @@ make_gate_descriptor:                       ;构造门的描述符（调用门等）
 	cpu_brand	times 52 db 0
 	cpu_brnd1		db	0x0d,0x0a,0x0d,0x0a,0
 
+;--------------------------------------------------------------------
+append_to_tcb_link:								;在TCB链上追加任务控制块
+												;输入：ECX=TCB线性基地址
+	cli
+
+	push eax
+	push ebx
+
+	mov eax,tcb_chain
+.b0:
+	mov ebx,[eax]
+	or ebx,ebx
+	jz .b1
+	mov eax,ebx
+	jmp .b2
+
+.b1:
+	mov [eax],ecx
+	mov dword [ecx],0x00000000
+
+	pop ebx
+	pop eax
+
+	sti
+
+	ret
+
 ;---------------------------------------------------------------------
 start:
 	;创建中断描述符表IDT
@@ -171,7 +638,143 @@ start:
 	mov bx,falt_4gb_code_seg_sel
 	mov cx,0x8e00
 	call falt_4gb_code_seg_sel:make_gate_descriptor
-
-	mov ebx,idt_linear_address
+	
+	mov ebx,idt_linear_address					;中断描述符表的线性地址，安装0x70中断描述符
 	mov [ebx+0x70*8],eax
 	mov [ebx+0x70*8+4],edx
+	
+	;准备开放中断
+	mov word [pidt],256*8-1						;IDT的界限
+	mov dword [pidt+2],idt_linear_address		;IDT的线性地址
+	lidt [pidt]									;加载中断描述符表寄存器IDTR
+
+	;设置8259A中断控制器
+	mov al,0x11
+	out 0x20,al									;ICW1，边沿触发/级联方式
+	mov al,0x20
+	out 0x21,al									;ICW2，起始中断向量，0x20=32
+	mov al,0x04
+	out 0x21,al									;ICW3，从片级联到IR2
+	mov al,0x01
+	out 0x21,al									;ICW4，非总线缓冲，全嵌套，正常EOI
+	
+	mov al,0x11
+	out 0xa0,al
+	mov al,0x70
+	out 0xa1,al
+	mov al,0x04
+	out 0xa1,al
+	mov al,0x01
+	out 0xa1,al
+
+	;设置和时钟中断相关的硬件
+	mov al,0x0b									;RTC寄存器B
+	or al,0x80									;阻断NMI
+	out 0x70,al
+	mov al,0x12									;设置寄存器B，禁止周期性中断，开放更
+	out 0x71,al									;新结束后中断，BCD码，24小时制
+
+	in al,0x0c
+	out 0x70,al
+	in al,0x71									;读寄存器C
+
+	sti
+
+	mov ebx,message_0
+	call falt_4gb_code_seg_sel:put_string
+
+	;显示处理器品牌信息 
+	mov eax,0x80000002
+	cpuid
+	mov [cpu_brand + 0x00],eax
+	mov [cpu_brand + 0x04],ebx
+	mov [cpu_brand + 0x08],ecx
+	mov [cpu_brand + 0x0c],edx
+	
+	mov eax,0x80000003
+	cpuid
+	mov [cpu_brand + 0x10],eax
+	mov [cpu_brand + 0x14],ebx
+	mov [cpu_brand + 0x18],ecx
+	mov [cpu_brand + 0x1c],edx
+
+	mov eax,0x80000004
+	cpuid
+	mov [cpu_brand + 0x20],eax
+	mov [cpu_brand + 0x24],ebx
+	mov [cpu_brand + 0x28],ecx
+	mov [cpu_brand + 0x2c],edx
+
+	mov ebx,cpu_brnd0                  ;显示处理器品牌信息 
+	call flat_4gb_code_seg_sel:put_string
+	mov ebx,cpu_brand
+	call flat_4gb_code_seg_sel:put_string
+	mov ebx,cpu_brnd1
+	call flat_4gb_code_seg_sel:put_string
+
+	;以下开始安装为整个系统服务的调用门。特权级之间的控制转移必须使用门
+	mov edi,salt                       ;C-SALT表的起始位置 
+	mov ecx,salt_items                 ;C-SALT表的条目数量 
+.b4:
+	push ecx   
+	mov eax,[edi+256]                  ;该条目入口点的32位偏移地址 
+	mov bx,[edi+260]                   ;该条目入口点的段选择子 
+	mov cx,1_11_0_1100_000_00000B      ;特权级3的调用门(3以上的特权级才
+                                            ;允许访问)，0个参数(因为用寄存器
+                                            ;传递参数，而没有用栈) 
+	call flat_4gb_code_seg_sel:make_gate_descriptor
+	call flat_4gb_code_seg_sel:set_up_gdt_descriptor
+	mov [edi+260],cx                   ;将返回的门描述符选择子回填
+	add edi,salt_item_len              ;指向下一个C-SALT条目 
+	pop ecx
+	loop .b4
+
+	;对门进行测试 
+	mov ebx,message_1
+	call far [salt_1+256]              ;通过门显示信息(偏移量将被忽略) 
+	
+	;初始化创建程序管理器任务的任务控制块TCB
+	mov word [core_tcb+0x04],0xffff
+	mov dword [core_tcb+0x06],0x80100000
+										;内核虚拟地址分配从这里开始
+	mov word [core_tcb+0x0a],0xffff		;登记LDT初始的界限到TCB（未使用）
+	mov ecx,core_tcb
+	call append_to_tcb_link				;添加到TCB链中
+
+	;为程序管理器的TSS分配空间
+	alloc_core_linear					;宏：在内核的虚拟地址空间内分配内存
+	
+	;在程序管理器的TSS中设置必要的项目
+	mov word [ebx+0],0					;反向链=0
+	mov eax,cr3							
+	mov dword [ebx+28],eax				;登记CR3(PDBR)
+	mov word [ebx+96],0					;没有LDT。处理器允许没有LDT的任务。
+	mov word [ebx+100],0				;T=0
+	mov word [ebx+102],103				;有I/O位图。0特权级事实上不需要。
+	
+	;创建程序任务管理器的TSS描述符，并安装到GDT中
+	mov eax,ebx
+	mov ebx,103
+	mov ecx,0x00408900
+	call falt_4gb_code_seg_sel:make_seg_descriptor
+	call falt_4gb_code_seg_sel:set_up_gdt_descriptor
+	mov [core_tcb+0x18],cx				;登记TSS选择子到TCB
+
+	;任务寄存器TR中的内容是任务存在的标志，该内容也决定了当前任务是谁。
+	;下面的指令为当前正在执行的0特权级任务“程序管理器”后补手续（TSS）。
+	ltr cx
+
+	;程序管理器任务正在执行
+
+	;创建用户任务的任务控制块
+	alloc_core_linear
+
+	mov word [ebx+0x04],0				;任务状态，空闲
+	mov dword [ebx+0x06],0				;用户任务局部空间的分配从0开始
+	mov word [ebx+0x0a],0xffff			;登记LDT初始的界限到TCB中
+
+	push dword 50						;用户程序所在扇区
+	push ebx							;用户任务的TCB的线性地址
+	call load_relocate_program
+	mov ecx,ebx
+	call append_to_tcb_link				;将用户任务的TCB添加到TCB链中
