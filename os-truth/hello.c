@@ -2,6 +2,12 @@
 
 int main()
 {
-    printf("hello world!\n");
-    return 0;
+	printf("hello world!\n");
+	printf("hello world!\n");
+
+	for(int i=0; i<5; I++) {
+		printf("hello world!\n");
+	}
+
+	return 0;
 }
