@@ -28,7 +28,7 @@
     times   60  dq  0                                   ;预留60个描述符的空位
     SELECTOR_CODE       equ (0x0001<<3) + TI_GDT + RPL0 ;(CODE_DESC-GDT_BASE)/8 + TI_GDT + RPL0
     SELECTOR_DATA       equ (0x0002<<3) + TI_GDT + RPL0
-    SELECTOR_VIODEO     equ (0x0003<<3) + TI_GDT + RPL0
+    SELECTOR_VIDEO      equ (0x0003<<3) + TI_GDT + RPL0
 
     ;gdt的指针,前2字节是gdt界限,后4字节是gdt的起始地址
     gdt_ptr             dw  GDT_LIMIT
@@ -36,9 +36,8 @@
 
     loadermag           db  '2 loader in real.'
 
-    loader_start:
-
 ;========================================================
+loader_start:
 
 ;--------------------------------------------------------
 ;INT 0x10   功能号:0x13     功能描述:打印字符串
@@ -63,8 +62,6 @@
     mov bx,0x001f
     mov dx,0x1800
     int 0x10
-
-;---------------------------------------------------------
 
 ;------------ 准备进入保护模式 ------------
 ;1 打开A20
@@ -95,9 +92,10 @@ p_mode_start:
     mov es,ax
     mov ss,ax
     mov esp,LOADER_STACK_TOP
-    mov ax,SELECTOR_VIODEO
+    mov ax,SELECTOR_VIDEO
     mov gs,ax
 
     mov byte [gs:160],'P'
+    ;mov byte [gs:161],0001_0100B
 
     jmp $

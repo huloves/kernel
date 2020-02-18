@@ -33,19 +33,19 @@ SECTION MBR vstart=0x7c00
 
 	;输出背景色蓝色,前景色红色,并且跳动的字符串"1 MBR"
     mov byte [gs:0x00],'1'
-    mov byte [gs:0x01],1001_0100B
+    mov byte [gs:0x01],0001_0100B
 
     mov byte [gs:0x02],' '
-    mov byte [gs:0x03],0x94
+    mov byte [gs:0x03],0x14
 
     mov byte [gs:0x04],'M'
-    mov byte [gs:0x05],0x94
+    mov byte [gs:0x05],0x14
 
     mov byte [gs:0x06],'B'
-    mov byte [gs:0x07],0x94
+    mov byte [gs:0x07],0x14
 
     mov byte [gs:0x08],'R'
-    mov byte [gs:0x09],0x94
+    mov byte [gs:0x09],0x14
 
 	mov eax,LOADER_START_SECTOR		;起始扇区lba地址
 	mov bx,LOADER_BASE_ADDR			;写入的地址
