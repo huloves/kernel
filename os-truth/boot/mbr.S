@@ -120,6 +120,7 @@ rd_disk_m_16:						;eax=LBA扇区号
 	mov [bx],ax
 	add bx,2
 	loop .go_on_read
+	
 	ret
 
 	times 510-($-$$) db 0
