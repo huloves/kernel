@@ -1,13 +1,12 @@
     ;文件说明:内核加载器
-    ;更新日期:2020-2-18 23:15
+    ;创建日期:2020-2-18 23:15
     
     %include "boot.inc"
 
 ;=======================================================
     section loader vstart=LOADER_BASE_ADDR
 ;-------------------------------------------------------
-    LOADER_STACK_TOP    equ LOADER_BASE_ADDR
-    
+    LOADER_STACK_TOP    equ LOADER_BASE_ADDR 
     ;jmp loader_start
 ;=======================================================
     ;构建gdt及其内部的描述符
