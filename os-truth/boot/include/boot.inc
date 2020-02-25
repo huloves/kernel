@@ -1,7 +1,13 @@
 ;------------ loader和kernel ------------
 
-LOADER_BASE_ADDR		equ	0x900
-LOADER_START_SECTOR		equ	0x2
+LOADER_BASE_ADDR		equ	0x900                           ;loader加载地址
+LOADER_START_SECTOR		equ	0x2                             ;loader所在扇区
+
+KERNEL_START_SECTOR     equ 0x9                             ;内核所在扇区
+KERNEL_BIN_BASE_ADDR    equ 0x70000                         ;kernel.bin起始物理地址
+KERNEL_ENTRY_POINT      equ 0xc0001500                      ;内核入口地址
+
+PAGE_DIR_TABLE_POS      equ 0x100000                        ;页目录表物理地址
 
 ;------------ gdt描述符属性 ------------
 ;                       G D L AVL    P    S TYPE
@@ -34,3 +40,13 @@ RPL2	equ   10B
 RPL3	equ   11B
 TI_GDT	equ 0_00B
 TI_LDT	equ 1_00B
+
+;------------ 页表相关属性 ------------
+PG_P        equ   1B
+PG_RW_R     equ  00B
+PG_RW_W     equ  10B
+PG_US_S     equ 000B
+PG_US_U     equ 100B
+
+;--------------------------------------
+PT_NULL     equ 0
