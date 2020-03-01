@@ -32,4 +32,3 @@ simu_write:
     mov edx,[ebp+16]
     int 0x80
     pop ebp
-    ret

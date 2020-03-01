@@ -2,11 +2,94 @@ TI_GDT  equ 0
 RPL0    equ 0
 SELECTOR_VIDEO equ (0x0003 << 3) + TI_GDT + RPL0
 
-;----------------------------------------------------
+;====================================================
     [bits 32]
-;----------------------------------------------------
+;====================================================
 section .text
+put_int_buffer dq 0             ;定义8字节缓冲区用于数字到字符的转换
+;====================================================
+global put_str
+put_str:                        ;打印字符串
+    push ebx
+    push ecx
+    xor ecx,ecx
+    mov ebx,[esp+12]            ;从栈中得到待打印的字符串地址
+.goon:
+    mov cl,[ebx]
+    cmp cl,0
+    jz .str_over
+    push ecx                    ;为put_char传递参数
+    call put_char
+    add esp,4                   ;回收参数占用的空间
+    inc ebx                     ;指向下一个字符
+    jmp .goon
+.str_over:
+    pop ecx
+    pop ebx
+    ret
 
+;====================================================
+global put_int
+put_int:                        ;将小端字节序的数字变成对应的ASCII后,倒置
+                                ;输入:栈中的参数为待打印的数字
+                                ;输出:在屏幕打印十六进制数字,并不会打印前缀0x
+    pushad
+    mov ebp,esp
+    mov eax,[ebp+4*9]
+    mov edx,eax
+    mov edi,7                   ;指定put_int_buffer中初始的偏移量
+    mov ecx,8                   ;32位数字中,十六进制数字的位数是8
+    mov ebx,put_int_buffer
+
+    ;将32位数字按照十六进制的形式从低位到高位逐位处理,共处理8个十六进制数字
+.16based_4bits:                 ;每4位二进制是十六进制数字的1位
+    and edx,0x0000000f
+    cmp edx,9
+    jg .is_A2F
+    add edx,'0'
+    jmp .store
+.is_A2F:
+    sub edx,10                  ;A~F减去10得到的差,加上字符A的ASCII后就是对应的A~F的ASCII
+    add edx,'A'
+
+    ;将每一位数字转换成对应的字符后,按照类似"大端"的顺序存入到put_int_buffer中,高位存储在低地址
+.store:
+    mov [ebx+edi],dl            ;dl中是数字对应的ASCII
+    dec edi
+    shr eax,4
+    mov edx,eax
+    loop .16based_4bits
+
+    ;把高位连续的字符去掉,如000123变成123
+.ready_to_print:
+    inc edi
+.skip_prefix_0:
+    cmp edi,8
+
+    je .full0
+
+.go_on_skip:
+    mov cl,[put_int_buffer+edi]
+    inc edi
+    cmp cl,'0'
+    je .skip_prefix_0
+    dec edi
+    jmp .put_each_num
+
+.full0:
+    mov cl,'0'
+.put_each_num:
+    push ecx
+    call put_char
+    add esp,4
+    inc edi
+    mov cl,[put_int_buffer+edi]
+    cmp edi,8
+    jl .put_each_num
+    
+    popad
+    ret
+;====================================================
 global put_char
 put_char:                       ;把栈中的1个字符写入光标所在处
     pushad                      ;备份32位寄存器环境
@@ -41,7 +124,6 @@ put_char:                       ;把栈中的1个字符写入光标所在处
 
     jmp .put_other
 
-;-------------------------------------------------------
 .is_backspace:
     dec bx
     shl bx,1                    ;一个字符占两个字节,乘2后是对应在显存中的偏移字节
@@ -52,7 +134,6 @@ put_char:                       ;把栈中的1个字符写入光标所在处
     shr bx,1
     jmp .set_cursor
 
-;------------------------------------------------------
 .put_other:
     shl bx,1
 
@@ -64,7 +145,6 @@ put_char:                       ;把栈中的1个字符写入光标所在处
     cmp bx,2000
     jl .set_cursor
 
-;-----------------------------------------------------
 .is_line_feed:                  ;处理换行,回车
 .is_carriage_return:
     xor dx,dx                   ;被除数高16位,清0
@@ -79,7 +159,6 @@ put_char:                       ;把栈中的1个字符写入光标所在处
 .is_line_feed_end:              ;若是换行CR(\n),将光标+80即可
     jl .set_cursor
 
-;-----------------------------------------------------
 .roll_screen:                   ;超出屏幕大小,开始滚屏
     cld
     mov ecx,960                 ;2000-80=1920字符,1920*2=3840字节,3840/4=960次
@@ -97,7 +176,6 @@ put_char:                       ;把栈中的1个字符写入光标所在处
 
     mov bx,1920                 ;将光标重置为1920,最后一行的首字符
 
-;-----------------------------------------------------
 .set_cursor:                    ;将光标设置为bx的值
     mov dx,0x03d4               ;索引寄存器
     mov al,0x0e                 ;索引光标位置的高8位
@@ -113,7 +191,6 @@ put_char:                       ;把栈中的1个字符写入光标所在处
     mov al,bl
     out dx,al
 
-;-----------------------------------------------------
 .put_char_done:
     popad
 
