@@ -14,7 +14,7 @@ intr_entry_table:
 
 %macro VECTOR 2
 section .text
-intr%lentry:                        ;每个中断处理程序都要压入中断向量号
+intr%1entry:                        ;每个中断处理程序都要压入中断向量号
                                     ;所以一个中断类型一个中断处理程序
                                     ;自己知道自己的中断向量号是多少
     %2
@@ -32,7 +32,7 @@ intr%lentry:                        ;每个中断处理程序都要压入中断�
     iret                            ;从终端返回，32位下等同指令iretd
 
 section .data
-    dd  intr%lentry                 ;存储各个中断入口程序的地址，形成intr_entry_table数组
+    dd  intr%1entry                 ;存储各个中断入口程序的地址，形成intr_entry_table数组
 %endmacro
 
 VECTOR 0x00,ZERO
@@ -43,16 +43,16 @@ VECTOR 0x04,ZERO
 VECTOR 0x05,ZERO
 VECTOR 0x06,ZERO
 VECTOR 0x07,ZERO
-VECTOR 0x08,ZERO
+VECTOR 0x08,ERROR_CODE
 VECTOR 0x09,ZERO
-VECTOR 0x0a,ZERO
-VECTOR 0x0b,ZERO
-VECTOR 0x0c,ZERO
-VECTOR 0x0d,ZERO
-VECTOR 0x0e,ZERO
+VECTOR 0x0a,ERROR_CODE
+VECTOR 0x0b,ERROR_CODE
+VECTOR 0x0c,ERROR_CODE
+VECTOR 0x0d,ERROR_CODE
+VECTOR 0x0e,ERROR_CODE
 VECTOR 0x0f,ZERO
 VECTOR 0x10,ZERO
-VECTOR 0x11,ZERO
+VECTOR 0x11,ERROR_CODE
 VECTOR 0x12,ZERO
 VECTOR 0x13,ZERO
 VECTOR 0x14,ZERO
@@ -65,6 +65,6 @@ VECTOR 0x1a,ZERO
 VECTOR 0x1b,ZERO
 VECTOR 0x1c,ZERO
 VECTOR 0x1d,ZERO
-VECTOR 0x1e,ZERO
+VECTOR 0x1e,ERROR_CODE
 VECTOR 0x1f,ZERO
 VECTOR 0x20,ZERO
