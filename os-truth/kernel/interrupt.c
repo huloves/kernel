@@ -1,4 +1,5 @@
 #include "stdint.h"
+#include "print.h"
 #include "interrupt.h"
 #include "global.h"
 #include "io.h"

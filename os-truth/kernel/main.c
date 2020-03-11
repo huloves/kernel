@@ -1,36 +1,10 @@
 #include "stdint.h"
+#include "init.h"
+
 void main(void)
 {
-    put_str("huloves@huloves:~$ \n");
-    put_str("huloves@huloves:~$ \n");
-    put_str("huloves@huloves:~$ \n");
-    put_str("huloves@huloves:~$ \n");
-    put_str("huloves@huloves:~$ \n");
-    put_str("huloves@huloves:~$ \n");
-    put_str("huloves@huloves:~$ \n");
-    put_str("huloves@huloves:~$ \n");
-    put_str("huloves@huloves:~$ \n");
-    put_str("huloves@huloves:~$ \n");
-    put_str("huloves@huloves:~$ \n");
-    put_str("huloves@huloves:~$ \n");
-    put_str("huloves@huloves:~$ \n");
-    put_str("huloves@huloves:~$ \n");
-    put_str("huloves@huloves:~$ \n");
-    put_str("huloves@huloves:~$ \n");
-    put_str("huloves@huloves:~$ \n");
-    put_str("huloves@huloves:~$ \n");
-    put_str("huloves@huloves:~$ \n");
-    put_str("huloves@huloves:~$ \n");
-    put_str("huloves@huloves:~$ \n");
-    put_str("huloves@huloves:~$ \n");
-    put_str("huloves@huloves:~$ \n");
-    put_str("huloves@huloves:~$ \n");
-    put_str("huloves@huloves:~$ ");
-    put_int(0x00021a3f);
-    put_char('\n');
-    put_int(0x12345678);
-    put_char('\n');
-    put_int(0x00000000);
-    put_char('\n');
-    while(1);
+    put_str("i am kernel\n");
+    init_all();
+    asm volatile ("sti");   //临时开中断
+    while(1);    
 }
