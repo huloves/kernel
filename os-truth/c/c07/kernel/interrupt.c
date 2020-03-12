@@ -1,9 +1,11 @@
-#include "stdint.h"
 #include "interrupt.h"
+#include "stdint.h"
+#include "print.h"
 #include "global.h"
 #include "io.h"
 
 #define IDT_DESC_CNT 0x21       //目前总共支持的中断数
+
 #define PIC_M_CTRL 0x20         //主片的控制端口0x20
 #define PIC_M_DATA 0x21         //主片的数据端口0x21
 #define PIC_S_CTRL 0xa0         //从片的控制端口0xa0
@@ -26,7 +28,8 @@ extern intr_handler intr_entry_table[IDT_DESC_CNT]; //声明引用定义在kerne
 static void make_idt_desc(struct gate_desc* p_gdesc, uint8_t attr, intr_handler function);
 
 /*初始化可编程中断控制器8259A*/
-static void pic_init(void) {
+static void pic_init(void)
+{
     //初始化主片
     outb(PIC_M_CTRL, 0x11);   //ICW1:0001_0001 边沿触发，级联8259，需要ICW4
     outb(PIC_M_DATA, 0x20);   //ICW2:0010_0000 起始中断向量号0x20，0x20~0x2f
@@ -41,13 +44,14 @@ static void pic_init(void) {
 
     //打开主片上IR0，也就是目前只接受始终产生的中断
     outb(PIC_M_DATA, 0xfe);   //OCW1:1111_1110
-    outb(PIC_S_DATA, 0xfe);   //COW1:1111_1110
+    outb(PIC_S_DATA, 0xff);   //COW1:1111_1111
 
     put_str("   pic_init done\n");
 }
 
 /*创建中断门描述符*/
-static void make_idt_desc(struct gate_desc* p_gdesc, uint8_t attr, intr_handler function) {
+static void make_idt_desc(struct gate_desc* p_gdesc, uint8_t attr, intr_handler function)
+{
     p_gdesc->func_offset_low_word = (uint32_t)function & 0x0000ffff;
     p_gdesc->selector = SELECTOR_K_CODE;
     p_gdesc->dcount = 0;
@@ -56,7 +60,8 @@ static void make_idt_desc(struct gate_desc* p_gdesc, uint8_t attr, intr_handler 
 }
 
 /*初始化中断描述表*/
-static void idt_desc_init(void) {
+static void idt_desc_init(void)
+{
     int i;
     for(i=0; i<IDT_DESC_CNT; i++) {
         make_idt_desc(&idt[i], IDT_DESC_ATTR_DPL0, intr_entry_table[i]);
@@ -65,13 +70,14 @@ static void idt_desc_init(void) {
 }
 
 /*完成中断的所有初始化工作*/
-void idt_init() {
+void idt_init()
+{
     put_str("idt_init start\n");
     idt_desc_init();    //初始化中断描述符表
     pic_init();         //初始化8259A
 
     /* 加载IDT */
-    uint64_t idt_operand = ((sizeof(idt)-1) | ((uint64_t)((uint32_t)idt << 16)));
-    asm volatile ("lidt %0" : : "m"(idt_operand));
+    uint64_t idt_operand = ((sizeof(idt) - 1) | ( (uint64_t)(uint32_t)idt << 16 ));
+    asm volatile("lidt %0" : : "m"(idt_operand));
     put_str("idt_init done\n");
 }
