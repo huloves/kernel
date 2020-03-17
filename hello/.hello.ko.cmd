@@ -1,1 +1,0 @@
-cmd_/home/huloves/kernel/hello/hello.ko := ld -r -m elf_x86_64 -z max-page-size=0x200000 -T ./scripts/module-common.lds --build-id  -o /home/huloves/kernel/hello/hello.ko /home/huloves/kernel/hello/hello.o /home/huloves/kernel/hello/hello.mod.o ;  true
