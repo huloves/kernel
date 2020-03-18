@@ -9,8 +9,8 @@ typedef void* intr_handler;
     INTR_ON值为1，表示开中断*/
 enum intr_status        //中断状态
 {
-    INTR_OFF,           //中断关闭
-    INTR_ON             //终端打开
+    INTR_OFF,           //中断关闭,0
+    INTR_ON             //中断打开,1
 };
 
 enum intr_status intr_get_status(void);
