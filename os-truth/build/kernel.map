@@ -118,40 +118,40 @@ LOAD build/debug.o
 .plt.sec
  *(.plt.sec)
 
-.text           0x00000000c0001500      0xcf8
+.text           0x00000000c0001500      0xd38
  *(.text.unlikely .text.*_unlikely .text.unlikely.*)
  *(.text.exit .text.exit.*)
  *(.text.startup .text.startup.*)
  *(.text.hot .text.hot.*)
  *(.text .stub .text.* .gnu.linkonce.t.*)
- .text          0x00000000c0001500       0x33 build/main.o
+ .text          0x00000000c0001500       0x76 build/main.o
                 0x00000000c0001500                main
  .text.__x86.get_pc_thunk.bx
-                0x00000000c0001533        0x4 build/main.o
-                0x00000000c0001533                __x86.get_pc_thunk.bx
- .text          0x00000000c0001537       0x34 build/init.o
-                0x00000000c0001537                init_all
- .text          0x00000000c000156b      0x492 build/interrupt.o
-                0x00000000c00018c8                intr_enable
-                0x00000000c00018fb                intr_disable
-                0x00000000c000192e                intr_set_status
-                0x00000000c0001956                intr_get_status
-                0x00000000c000197d                idt_init
+                0x00000000c0001576        0x4 build/main.o
+                0x00000000c0001576                __x86.get_pc_thunk.bx
+ .text          0x00000000c000157a       0x34 build/init.o
+                0x00000000c000157a                init_all
+ .text          0x00000000c00015ae      0x492 build/interrupt.o
+                0x00000000c000190b                intr_enable
+                0x00000000c000193e                intr_disable
+                0x00000000c0001971                intr_set_status
+                0x00000000c0001999                intr_get_status
+                0x00000000c00019c0                idt_init
  .text.__x86.get_pc_thunk.ax
-                0x00000000c00019fd        0x4 build/interrupt.o
-                0x00000000c00019fd                __x86.get_pc_thunk.ax
- .text          0x00000000c0001a01      0x114 build/timer.o
-                0x00000000c0001ac1                timer_init
- *fill*         0x00000000c0001b15        0xb 
- .text          0x00000000c0001b20      0x456 build/kernel.o
-                0x00000000c0001b20                intr_exit
- *fill*         0x00000000c0001f76        0xa 
- .text          0x00000000c0001f80      0x184 build/print.o
-                0x00000000c0001f88                put_str
-                0x00000000c0001fac                put_int
-                0x00000000c000202d                put_char
- .text          0x00000000c0002104       0xf4 build/debug.o
-                0x00000000c0002104                panic_spin
+                0x00000000c0001a40        0x4 build/interrupt.o
+                0x00000000c0001a40                __x86.get_pc_thunk.ax
+ .text          0x00000000c0001a44      0x114 build/timer.o
+                0x00000000c0001b04                timer_init
+ *fill*         0x00000000c0001b58        0x8 
+ .text          0x00000000c0001b60      0x456 build/kernel.o
+                0x00000000c0001b60                intr_exit
+ *fill*         0x00000000c0001fb6        0xa 
+ .text          0x00000000c0001fc0      0x184 build/print.o
+                0x00000000c0001fc8                put_str
+                0x00000000c0001fec                put_int
+                0x00000000c000206d                put_char
+ .text          0x00000000c0002144       0xf4 build/debug.o
+                0x00000000c0002144                panic_spin
  *(.gnu.warning)
 
 .fini
@@ -160,14 +160,14 @@ LOAD build/debug.o
                 [!provide]                        PROVIDE (_etext = .)
                 [!provide]                        PROVIDE (etext = .)
 
-.rodata         0x00000000c00021f8      0x2dd
+.rodata         0x00000000c0002238      0x311
  *(.rodata .rodata.* .gnu.linkonce.r.*)
- .rodata        0x00000000c00021f8        0xd build/main.o
- .rodata        0x00000000c0002205        0xa build/init.o
- *fill*         0x00000000c000220f        0x1 
- .rodata        0x00000000c0002210      0x261 build/interrupt.o
- .rodata        0x00000000c0002471       0x23 build/timer.o
- .rodata        0x00000000c0002494       0x41 build/debug.o
+ .rodata        0x00000000c0002238       0x41 build/main.o
+ .rodata        0x00000000c0002279        0xa build/init.o
+ *fill*         0x00000000c0002283        0x1 
+ .rodata        0x00000000c0002284      0x261 build/interrupt.o
+ .rodata        0x00000000c00024e5       0x23 build/timer.o
+ .rodata        0x00000000c0002508       0x41 build/debug.o
 
 .rodata1
  *(.rodata1)
@@ -176,16 +176,16 @@ LOAD build/debug.o
  *(.eh_frame_hdr)
  *(.eh_frame_entry .eh_frame_entry.*)
 
-.eh_frame       0x00000000c00024d8      0x298
+.eh_frame       0x00000000c000254c      0x298
  *(.eh_frame)
- .eh_frame      0x00000000c00024d8       0x54 build/main.o
- .eh_frame      0x00000000c000252c       0x24 build/init.o
+ .eh_frame      0x00000000c000254c       0x54 build/main.o
+ .eh_frame      0x00000000c00025a0       0x24 build/init.o
                                          0x50 (松开之前的大小)
- .eh_frame      0x00000000c0002550      0x194 build/interrupt.o
+ .eh_frame      0x00000000c00025c4      0x194 build/interrupt.o
                                         0x1c0 (松开之前的大小)
- .eh_frame      0x00000000c00026e4       0x70 build/timer.o
+ .eh_frame      0x00000000c0002758       0x70 build/timer.o
                                          0xb0 (松开之前的大小)
- .eh_frame      0x00000000c0002754       0x1c build/debug.o
+ .eh_frame      0x00000000c00027c8       0x1c build/debug.o
                                          0x48 (松开之前的大小)
  *(.eh_frame.*)
 
@@ -329,15 +329,14 @@ LOAD build/debug.o
 .stab.indexstr
  *(.stab.indexstr)
 
-.comment        0x0000000000000000       0x54
+.comment        0x0000000000000000       0x29
  *(.comment)
  .comment       0x0000000000000000       0x29 build/main.o
                                          0x2a (松开之前的大小)
  .comment       0x0000000000000029       0x2a build/init.o
  .comment       0x0000000000000029       0x2a build/interrupt.o
- .comment       0x0000000000000029       0x2b build/timer.o
-                                         0x2c (松开之前的大小)
- .comment       0x0000000000000054       0x2a build/debug.o
+ .comment       0x0000000000000029       0x2a build/timer.o
+ .comment       0x0000000000000029       0x2a build/debug.o
 
 .debug
  *(.debug)

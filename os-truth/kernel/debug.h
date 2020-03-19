@@ -8,16 +8,16 @@ void panic_spin(char* filename, int line, const char* func, const char* conditio
  * "..."表示定义的宏其参数可变
  * **********************
 */
-#define PANIC(...) panic_spin(_FILE_, _LINE_, _func_, VA_ARGS)
+#define PANIC(...) panic_spin(__FILE__, __LINE__, __func__, __VA_ARGS__)
 
 #ifndef NDEBUG
     #define ASSERT(CONDITION) ((void)0)
 #else
-    #define ASSERT(CONDITION)\
-    if(CONDITION){}else{ \
-        /*符号#让编译器将宏的参数转化为字符串面量*/ \
-        PANIC(#CONDITION); \
-    }
+#define ASSERT(CONDITION)\
+if(CONDITION){}else{ \
+    /*符号#让编译器将宏的参数转化为字符串面量*/ \
+    PANIC(#CONDITION); \
+}
 #endif /*NDEBUG*/
 
 #endif /*_KERNEL_DEBUG_H*/

@@ -5,7 +5,7 @@ CC = gcc
 LD = ld
 LIB = -I lib/ -I lib/kernel/ -I lib/user -I kernel/ -I device/
 ASFLAGS = -f elf
-CFLAGS = -m32 -Wall $(LIB) -c -fno-builtin -fno-stack-protector -W -Wstrict-prototypes \
+CFLAGS = -m32 -Wall $(LIB) -c -D NDEBUG -fno-builtin -fno-stack-protector -W -Wstrict-prototypes \
 		 -Wmissing-prototypes
 LDFLAGS = -m elf_i386 -Ttext $(ENTRY_POINT) -e main -Map $(BUILD_DIR)/kernel.map
 OBJS = $(BUILD_DIR)/main.o $(BUILD_DIR)/init.o $(BUILD_DIR)/interrupt.o \
