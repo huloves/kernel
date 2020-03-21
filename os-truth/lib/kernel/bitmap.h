@@ -7,8 +7,7 @@
 struct bitmap
 {
     uint32_t btmp_bytes_len;
-    //在遍历位图时，整体上以字节为单位，细节上是以位为单位。所以位图的指针必须是单字节
-    uint8_t* bits;
+    uint8_t* bits;   //在遍历位图时，整体上以字节为单位，细节上是以位为单位。所以位图的指针必须是单字节
 };
 
 void bitmap_init(struct bitmap* btmp);
