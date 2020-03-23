@@ -43,9 +43,10 @@ static void mem_pool_init(uint32_t all_mem)
     uint32_t kbm_length = kernel_free_pages / 8;   //Kernel Bitmap的长度，位图中的一位表示一页，以字节为单位
     uint32_t ubm_length = user_free_pages / 8;   //User Bitmap的长度，以字节为单位
 
-    uint32_t kp_start = used_mem;   //kernel pool start，内核内存池的起始地址
-    uint32_t up_start = kp_start + kernel_free_pages * PG_SIZE;   //user pool start，用户内存池的起始地址
+    uint32_t kp_start = used_mem;   //kernel pool start，内核物理内存池的起始地址
+    uint32_t up_start = kp_start + kernel_free_pages * PG_SIZE;   //user pool start，用户物理内存池的起始地址
 
+    //初始化内存池结构体
     kernel_pool.phy_addr_start = kp_start;
     user_pool.phy_addr_start = up_start;
 
@@ -66,7 +67,6 @@ static void mem_pool_init(uint32_t all_mem)
     //内核使用的最高地址是0xc009f000，这是主线程的栈地址（内核大小预计为70KB左右）
     //32MB内存占用的位图是2KB，内核内存池的位图先定在MEM_BITMAP_BASE(0xc009a000)处
     kernel_pool.pool_bitmap.bits = (void*)MEM_BITMAP_BASE;
-
     /*用户内存池的位图紧跟在内核内存池位图之后*/
     user_pool.pool_bitmap.bits = (void*)(MEM_BITMAP_BASE + kbm_length);
 
@@ -80,7 +80,7 @@ static void mem_pool_init(uint32_t all_mem)
     put_str("user_pool_bitmap_start:");
     put_int((int)user_pool.pool_bitmap.bits);
     put_str("\n");
-    put_str("user_pool_phy_addr_start");
+    put_str("user_pool_phy_addr_start:");
     put_int(user_pool.phy_addr_start);
     put_str("\n");
 
@@ -92,8 +92,9 @@ static void mem_pool_init(uint32_t all_mem)
     kernel_vaddr.vaddr_bitmap.btmp_bytes_len = kbm_length;   //用于维护内核堆栈的虚拟地址，所以要和内核内存池大小一致
     kernel_vaddr.vaddr_bitmap.bits = (void*)(MEM_BITMAP_BASE + kbm_length + ubm_length);   //位图的数组指向一块未使用的内存，目前定位在内核内存池和用户内存池之外
     kernel_vaddr.vaddr_start = K_HEAP_STACK;
-
+    
     bitmap_init(&kernel_vaddr.vaddr_bitmap);
+
     put_str("mem_init done\n");
 }
 
