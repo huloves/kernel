@@ -1,6 +1,9 @@
 #include "memory.h"
+#include "bitmap.h"
 #include "stdint.h"
+#include "global.h"
 #include "print.h"
+#include "string.h"
 
 #define PG_SIZE 4096   //4KB页表大小
 
@@ -13,6 +16,8 @@
 
 /*0xc0000000是内核从虚拟地址3G起。0x100000意指跨过低端1MB内存， 使虚拟地址在逻辑上连续*/
 #define K_HEAP_STACK 0xc0100000
+#define PDE_IDX(addr) ((addr & 0xffc00000) >> 22)
+#define PTE_IDX(addr) ((addr & 0x003ff000) >> 12)
 
 /*内存池结构，生成两个实例用于管理内核内存池和用户内存池*/
 struct pool
@@ -24,6 +29,55 @@ struct pool
 
 struct pool kernel_pool, user_pool;  //生成内核内存池和用户内存池
 struct virtual_addr kernel_vaddr;   //此结构用来给内核分配虚拟地址
+
+/*在pf表示的虚拟内存池中申请pg_cnt个虚拟页，成功返回虚拟页的起始地址，失败返回NULL*/
+static void* vaddr_get(enum pool_flags pf, uint32_t pg_cnt)
+{
+    int vaddr_start = 0, bit_idx_start = -1;
+    uint32_t cnt = 0;
+    if(pf == PF_KERNEL) {
+        bit_idx_start = bitmap_scan(&kernel_vaddr.vaddr_bitmap, pg_cnt);
+        if(bit_idx_start == -1) {
+            return NULL;
+        }
+        while(cnt < pg_cnt) {
+            bitmap_set(&kernel_vaddr.vaddr_bitmap, bit_idx_start + cnt++, 1);
+        }
+        vaddr_start = kernel_vaddr.vaddr_start + bit_idx_start * PG_SIZE;
+    } else {
+        //用户内存池，将来实现用户进程补充
+    }
+    return (void*)vaddr_start;
+}
+
+/*得到虚拟地址vaddr对应的pte指针*/
+uint32_t* pte_ptr(uint32_t vaddr)
+{
+    //先放到页表自己 + 再用页目录项pde（页目录内页表的索引作为pte的索引访问到页表 + pte的索引作为业内偏移）
+    uint32_t* pte = (uint32_t*)((0xffc00000 + (vaddr & 0xffc00000) >> 10) + PTE_IDX(vaddr) * 4);
+    return pte;
+}
+
+/*得到虚拟地址vaddr对应的pde的指针*/
+uint32_t* pde_ptr(uint32_t vaddr)
+{
+    //0xfffff用来访问页表本身所在的地址
+    uint32_t* pde = (uint32_t*)((0xfffff000) + PDE_IDX(vaddr) * 4);
+    return pde;
+}
+
+/*在m_pool指向的物理内存池中分配1个物理页，成功则返回页框的物理地址，失败则返回NULL*/
+static void* palloc(struct pool* m_pool)
+{
+    //扫描或设置要保证原子操作
+    int bit_idx = bitmap_scan(&m_pool->pool_bitmap, 1);   //找到一个物理页面
+    if(bit_idx == -1) {
+        return NULL;
+    }
+    bitmap_set(&m_pool->pool_bitmap, bit_idx, 1);   //将此位置1
+    uint32_t page_phyaddr = ((bit_idx * PG_SIZE) + m_pool->phy_addr_start);
+    return (void*)page_phyaddr;
+}
 
 /*初始化内存池*/
 static void mem_pool_init(uint32_t all_mem)
