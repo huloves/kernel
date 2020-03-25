@@ -79,6 +79,80 @@ static void* palloc(struct pool* m_pool)
     return (void*)page_phyaddr;
 }
 
+/*页表中添加虚拟地址_vaddr与物理地址_page_phyaddr的映射*/
+static void page_table_add(void* _vaddr, void* _page_phyaddr)
+{
+    uint32_t vaddr = (uint32_t)_vaddr, page_phyaddr = (uint32_t)_page_phyaddr;
+    uint32_t* pde = pde_ptr(vaddr);
+    uint32_t* pte = pte_ptr(vaddr);
+
+    //********************************************************************************
+    //执行*pte，会访问到空的pde，所以确保pde创建完成后才能执行*pte
+    //否则会引发page_fault。因此在*pde为0时，*pte只能出现在下面else语句块中的*pde后面
+    //********************************************************************************
+    //先在页目录内判断目录项的P位，若为1，则表示该表已存在
+    if(*pde & 0x00000001) {
+        ASSERT(!(*pte & 0x00000001));
+
+        if(!(*pte & 0x00000001)) {   //只要是创建页表，pte就应该存在，此处多判断一下放心
+            *pte = (page_phyaddr | PG_US_U | PG_RW_W | PG_P_1);
+        } else {   //目前不会执行到这，因为上面的ASSERT会先执行
+            PANIC("pte repeat");
+            *pte = (page_phyaddr | PG_US_U | PG_RW_W | PG_P_1);
+        }
+    } else {   //页目录项不存在，所以要先创建页目录项在创建页表项
+        //页表中用到的页框一律从内核空间分配
+        uint32_t pde_phyaddr = (uint32_t)palloc(&kernel_pool);
+        
+        *pde = (pde_phyaddr | PG_US_U | PG_RW_W | PG_P_1);
+        
+        //分配道德物理页地址pde_phyaddr对应的物理内存清0，避免里面的陈旧数据编程页表项，让页表混乱
+        //访问到pde对应的物理地址，用pte取高20位便可。因为pte基于该pde对应的物理地址内在寻址，第12位置0便是对应的物理页的起始地址
+        memset((void*)((int)pte & 0xfffff000), 0, PG_SIZE);
+
+        ASSERT(!(*pte & 0x00000001));
+        *pte = (page_phyaddr | PG_US_U | PG_RW_W | PG_P_1);
+    }
+}
+
+/*分配pg_cnt个页空间，成功则返回虚拟地址，失败时返回NULL*/
+void* malloc_page(enum pool_flags pf, uint32_t pg_cnt)
+{
+    ASSERT(pg_cnt > 0 && pg_cnt < 3840);
+    //1.通过vaddr_get在虚拟内存池中申请虚拟地址
+    //2.通过palloc在物理内存池中申请物理页
+    //3.通过page_table_add将以上得到的虚拟地址和物理地址在页表中完成映射
+    void* vaddr_start = vaddr_get(pf, pg_cnt);
+    if(vaddr_start == NULL) {
+        return NULL;
+    }
+
+    uint32_t vaddr = (uint32_t)vaddr_start, cnt = pg_cnt;
+    struct pool* mem_pool = pf & PF_KERNEL ? &kernel_pool : &user_pool;
+
+    //因为虚拟地址是连续的，但物理地址可以使不连续的，所以逐个映射
+    while(cnt-- > 0) {
+        void* page_phyaddr = palloc(mem_pool);
+        if(page_phyaddr == NULL) {
+            //失败时要将已申请的虚拟地址和物理页全部回滚，在将在完成内存回收时再补充
+            return NULL;
+        }
+        page_table_add((void*)vaddr, page_phyaddr);   //在页表中做映射
+        vaddr += PG_SIZE;   //下一个虚拟页
+    }
+    return vaddr_start;
+}
+
+/*从内核物理内存池中申请1页内存，成功返回虚拟地址，失败返回NULL*/
+void* get_kernel_pages(uint32_t pg_cnt)
+{
+    void* vaddr = malloc_page(PF_KERNEL, pg_cnt);
+    if(vaddr == NULL) {   //若分配的地址不为空，将页框清0后返回
+        memset(vaddr, 0, pg_cnt);
+    }
+    return vaddr;
+}
+
 /*初始化内存池*/
 static void mem_pool_init(uint32_t all_mem)
 {
