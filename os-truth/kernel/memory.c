@@ -4,6 +4,7 @@
 #include "global.h"
 #include "print.h"
 #include "string.h"
+#include "debug.h"
 
 #define PG_SIZE 4096   //4KB页表大小
 
@@ -54,7 +55,7 @@ static void* vaddr_get(enum pool_flags pf, uint32_t pg_cnt)
 uint32_t* pte_ptr(uint32_t vaddr)
 {
     //先放到页表自己 + 再用页目录项pde（页目录内页表的索引作为pte的索引访问到页表 + pte的索引作为业内偏移）
-    uint32_t* pte = (uint32_t*)((0xffc00000 + (vaddr & 0xffc00000) >> 10) + PTE_IDX(vaddr) * 4);
+    uint32_t* pte = (uint32_t*)(0xffc00000 + ((vaddr & 0xffc00000) >> 10) + PTE_IDX(vaddr) * 4);
     return pte;
 }
 
