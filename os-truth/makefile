@@ -51,6 +51,10 @@ $(BUILD_DIR)/thread.o: thread/thread.c thread/thread.h \
 					lib/stdint.h lib/string.h kernel/global.h kernel/memory.h
 	$(CC) $(CFLAGS) $< -o $@
 
+$(BUILD_DIR)/list.o: lib/kernel/list.h lib/kernel/list.c \
+					kernel/global.h kernel/interrupt.h
+	$(CC) $(CFLAGS) $< -o $@
+
 ###### 汇编代码编译 ######
 $(BUILD_DIR)/kernel.o: kernel/kernel.s
 	$(AS) $(ASFLAGS) $< -o $@
