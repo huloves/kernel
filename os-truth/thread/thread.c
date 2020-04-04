@@ -99,7 +99,7 @@ struct task_struct* thread_start(char* name, \
 static void make_main_thread(void)
 {
     //因为main线程早已运行，咱们在loader.s中进入内核时mov esp,0xc0001500
-    //就是为其预留pcb的，因此pcb地址为0xc0009e00，不需要另分配yiye
+    //就是为其预留pcb的，因此pcb地址为0xc009e000，不需要另分配yiye
     main_thread = running_thread();
     init_thread(main_thread, "main", 31);
 
