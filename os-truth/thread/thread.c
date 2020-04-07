@@ -137,7 +137,7 @@ void schedule()
 void thread_block(enum task_status stat)
 {
     //stat取值为BLOCKED,WAITTING,HANGING
-    ASSERT(stat == TASK_BLOCKED || stat == TASK_WAITING || stat == TASK_HANGING);
+    ASSERT(((stat == TASK_BLOCKED) || (stat == TASK_WAITING) || (stat == TASK_HANGING)));
     enum intr_status old_status = intr_disable();
     struct task_struct* cur_thread = running_thread();
     cur_thread->status = stat;   //置其状态为stat
@@ -150,7 +150,7 @@ void thread_block(enum task_status stat)
 void thread_unblock(struct task_struct* pthread)
 {
     enum intr_status old_status = intr_disable();
-    ASSERT(pthread->status == TASK_BLOCKED || pthread->status == TASK_WAITING || pthread->status == TASK_HANGING);
+    ASSERT(((pthread->status == TASK_BLOCKED) || (pthread->status == TASK_WAITING) || (pthread->status == TASK_HANGING)));
     if(pthread->status != TASK_READY) {
         ASSERT(!elem_find(&thread_ready_list, &pthread->general_tag));
         if(elem_find(&thread_ready_list, &pthread->general_tag)) {

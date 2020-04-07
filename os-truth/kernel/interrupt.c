@@ -129,7 +129,7 @@ static void exception_init(void)
     intr_name[11] = "#NP Segment NOt Present";
     intr_name[12] = "#SS Stack Fault Exception";
     intr_name[13] = "#GP General Protection Exception";
-    intr_name[14] = "#FP Page-Fault Exception";
+    intr_name[14] = "#PF Page-Fault Exception";
     //intr_name[15] 第15项是intel保留项，未使用
     intr_name[16] = "#MF x86 FPU Floating-Point Error";
     intr_name[17] = "#AC Alignment Check Exception";
