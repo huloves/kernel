@@ -45,8 +45,7 @@ void thread_create(struct task_struct* pthread, thread_func function, void* func
     kthread_stack->eip = kernel_thread;
     kthread_stack->function = function;
     kthread_stack->func_arg = func_arg;
-    kthread_stack->ebp = kthread_stack->ebx = \
-    kthread_stack->esi = kthread_stack->edi = 0;
+    kthread_stack->ebp = kthread_stack->ebx = kthread_stack->esi = kthread_stack->edi = 0;
 }
 
 /*初始化线程基本信息*/
@@ -71,10 +70,7 @@ void init_thread(struct task_struct* pthread, char* name, int prio)
 }
 
 /*创建一优先级为prio的线程，线程名为name，线程所执行的函数是function()*/
-struct task_struct* thread_start(char* name, \
-                                 int prio, \
-                                 thread_func function, \
-                                 void* func_arg) 
+struct task_struct* thread_start(char* name, int prio, thread_func function, void* func_arg) 
 {
     //pcb都位于内核空间，包括用户进程的pcb也是内核空间
     struct task_struct* thread = get_kernel_pages(1);
@@ -114,8 +110,7 @@ void schedule()
     ASSERT(intr_get_status() == INTR_OFF);
 
     struct task_struct* cur = running_thread();
-    if(cur->status == TASK_RUNNING) {
-        //若此线程只是cpu时间片到了，将其加入到就绪队列尾
+    if(cur->status == TASK_RUNNING) {   //若此线程只是cpu时间片到了，将其加入到就绪队列尾
         ASSERT(!elem_find(&thread_ready_list, &cur->general_tag));
         list_append(&thread_ready_list, &cur->general_tag);
         cur->ticks = cur->priority;   //重新将当前线程的ticks在重置为其priority

@@ -2,11 +2,13 @@ TI_GDT  equ 0
 RPL0    equ 0
 SELECTOR_VIDEO equ (0x0003 << 3) + TI_GDT + RPL0
 
+section .data
+put_int_buffer dq 0             ;定义8字节缓冲区用于数字到字符的转换
 ;====================================================
     [bits 32]
 ;====================================================
 section .text
-put_int_buffer dq 0             ;定义8字节缓冲区用于数字到字符的转换
+;put_int_buffer dq 0             ;定义8字节缓冲区用于数字到字符的转换
 ;====================================================
 global put_str
 put_str:                        ;打印字符串
@@ -119,7 +121,7 @@ put_char:                       ;把栈中的1个字符写入光标所在处
     jz .is_carriage_return
     cmp cl,0x0a                 ;判断是否是LF(换行)
     jz .is_line_feed
-    cmp cl,0x08                 ;判断是否是BS(退格)
+    cmp cl,0x8                 ;判断是否是BS(退格)
     jz .is_backspace
 
     jmp .put_other
@@ -164,6 +166,8 @@ put_char:                       ;把栈中的1个字符写入光标所在处
     mov ecx,960                 ;2000-80=1920字符,1920*2=3840字节,3840/4=960次
     mov esi,0xc00b80a0          ;第1行行首
     mov edi,0xc00b8000          ;第0行行首
+    ;mov esi,0xb80a0
+    ;mov edi,0xb8000
     rep movsd
 
     ;将最后一行填充为空白
@@ -171,6 +175,7 @@ put_char:                       ;把栈中的1个字符写入光标所在处
     mov ecx,80
 .cls:
     mov word [gs:ebx],0x0720    ;黑底白字的空格键
+    ;mov word [gs:bx],0x0720
     add ebx,2
     loop .cls
 

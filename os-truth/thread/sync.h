@@ -16,7 +16,7 @@ struct lock
 {
     struct task_struct* holder;   //锁的持有者
     struct semaphore semaphore;   //用二元信号量实现锁
-    uint32_t holder_repeat_nr;      //锁的持有者重复申请锁的次数
+    uint32_t holder_repeat_nr;    //锁的持有者重复申请锁的次数
 };
 
 void sema_init(struct semaphore* psema, uint8_t value);
