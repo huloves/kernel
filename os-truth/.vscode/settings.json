@@ -2,5 +2,6 @@
     "files.associations": {
         "stdint.h": "c"
     },
-    "C_Cpp.intelliSenseEngineFallback": "Enabled"
+    "C_Cpp.intelliSenseEngineFallback": "Enabled",
+    "C_Cpp.dimInactiveRegions": false
 }
