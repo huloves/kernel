@@ -5,7 +5,7 @@
 #include "global.h"
 #include "io.h"
 
-#define IDT_DESC_CNT 0x21       //目前总共支持的中断数
+#define IDT_DESC_CNT 0x30       //目前总共支持的中断数
 
 #define PIC_M_CTRL 0x20         //主片的控制端口0x20
 #define PIC_M_DATA 0x21         //主片的数据端口0x21
@@ -50,9 +50,12 @@ static void pic_init(void)
     outb(PIC_S_DATA, 0x02);   //ICW3:0000_0010 设置从片连接到主片的IR2引脚
     outb(PIC_S_DATA, 0x01);   //ICW4:0000_0001 8086模式，正常EOI
 
-    //打开主片上IR0，也就是目前只接受始终产生的中断
-    outb(PIC_M_DATA, 0xfe);   //OCW1:1111_1110
-    outb(PIC_S_DATA, 0xff);   //COW1:1111_1111
+    //打开主片上IR0，也就是目前只接受时钟产生的中断
+    //outb(PIC_M_DATA, 0xfe);   //OCW1:1111_1110
+    //outb(PIC_S_DATA, 0xff);   //COW1:1111_1111
+    //测试键盘，只打开键盘中断，其他全部关闭
+    outb(PIC_M_DATA, 0xfd);
+    outb(PIC_S_DATA, 0xff);
 
     put_str("   pic_init done\n");
 }

@@ -16,18 +16,18 @@ int main(void)
     put_str("i am kernel\n");
     init_all();
 
-    thread_start("k_thread_a", 31, k_thread_a, "argA ");
-    thread_start("k_thread_b", 8, k_thread_b, "argB ");
-    thread_start("k_thread_c", 16, k_thread_c, "argC ");
-    thread_start("k_thread_d", 8, k_thread_c, "argD ");
+    //thread_start("k_thread_a", 31, k_thread_a, "argA ");
+    //thread_start("k_thread_b", 8, k_thread_b, "argB ");
+    //thread_start("k_thread_c", 16, k_thread_c, "argC ");
+    //thread_start("k_thread_d", 8, k_thread_c, "argD ");
 
     intr_enable();   //打开中断
-    while(1) {
+    while(1); //{
         //intr_disable();
         //put_str("Main ");
         //intr_enable();
-        console_put_str("Main ");
-    }
+        //console_put_str("Main ");
+    //}
 
     return 0;
 }
