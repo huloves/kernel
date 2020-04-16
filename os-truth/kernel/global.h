@@ -55,8 +55,18 @@
 #define IDT_DESC_16_TYPE    0x6     //16位的门，不会用到
 #define IDT_DESC_ATTR_DPL0 ((IDT_DESC_P << 7) + (IDT_DESC_DPL0 << 5) + IDT_DESC_32_TYPE)
 #define IDT_DESC_ATTR_DPL3 ((IDT_DESC_P << 7) + (IDT_DESC_DPL3 << 5) + IDT_DESC_32_TYPE)
+//-----------------------------------------
+
+/*------------ EFLAGS属性 ------------*/
+#define EFLAGS_MBS      (1 << 1)   //此项必须要设置
+#define EFLAGS_IF_1     (1 << 9)   //if为1，开中断
+#define EFLAGS_IF_0 0
+#define EFLAGS_IOPL_3   (3 << 12)   //IOPL3，用于测试用户程序在非系统调用下进行IO
+#define EFLAGS_IOPL_0   (0 << 12)
+//-------------------------------------
 
 #define NULL ((void*)0)
+#define DIV_ROUND_UP(X, STEP) ((X + STEP - 1) / (STEP))
 #define bool int
 #define false 0
 #define true  1
