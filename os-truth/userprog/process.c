@@ -5,9 +5,9 @@
 #include "debug.h"
 #include "tss.h"
 
-extern void intr_exit(void);
+extern void intr_exit(void);   //外部函数，从中断返回
 
-/*构建用户进程初始上下文信息*/
+/*构建用户进程初始上下文信息，用户进程是从文件系统加载到内存的，进程名是进程的文件名*/
 void start_process(void* filename_)
 {
     void* function = filename_;
@@ -31,7 +31,7 @@ void start_process(void* filename_)
 void page_dir_activate(struct task_struct* p_thread)
 {
     /**执行此函数时，当前任务可能是线程。
-     * 之所以对县城也要重新安装页表，原因是上一次被调度的可能是进程，
+     * 之所以对线程也要重新安装页表，原因是上一次被调度的可能是进程，
      * 否则不恢复页表的话，线程就会使用进程的页表了**/
     //若为内核线程，需要重新填充页表为0x100000
     uint32_t pagedir_phy_addr = 0x100000;   //默认为内核的页目录物理地址，也就是内核线程所用的页目录表

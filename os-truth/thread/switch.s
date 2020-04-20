@@ -4,7 +4,7 @@
 section .text
 global switch_to
 switch_to:
-    ;栈中此处是返回地址
+    ;栈中此处是返回地址，返回地址为schedule()
     push esi
     push edi
     push ebx
