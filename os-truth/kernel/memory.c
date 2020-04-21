@@ -228,8 +228,8 @@ static void mem_pool_init(uint32_t all_mem)
     uint32_t free_mem = all_mem - used_mem;
     uint16_t all_free_pages = free_mem / PG_SIZE;   //1页为4KB，不管总内存是不是4K的倍数
                                                     //对于以页为单位的内存分配策略，不足1页的内存不用考虑
-    uint16_t kernel_free_pages = all_free_pages / 2;
-    uint16_t user_free_pages = all_free_pages - kernel_free_pages;
+    uint16_t kernel_free_pages = all_free_pages / 2;   //可给内核分配的内存页数
+    uint16_t user_free_pages = all_free_pages - kernel_free_pages;   //可给用户程序分配的内存页数
 
     //为简化位图操作，余数不处理，坏处是这样做会丢内存。
     //好处是不用做内存的越界检查，因为位图表示的内存少于实际物理内存
@@ -252,7 +252,7 @@ static void mem_pool_init(uint32_t all_mem)
     /*
      * ****** 内核内存池和用户内存池位图 ******
      * 位图是全局的数据，长度不固定。
-     * 全局或静态的数组需要咋编译是知道其长度，
+     * 全局或静态的数组需要在编译时知道其长度，
      * 而我们需要根据总内存大小算出需要多少字节，
      * 所以改为指定一块内存来生成位图
      * ***************************************
