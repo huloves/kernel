@@ -76,10 +76,9 @@ struct gdt_desc
 {
     uint16_t limit_low_word;
     uint16_t base_low_word;
-    uint8_t  base_mid_tyte;
+    uint8_t  base_mid_byte;
     uint8_t  attr_low_byte;
     uint8_t  limit_high_attr_high;
-    uint8_t  base_high_attr_high;
     uint8_t  base_high_byte;
 };
 

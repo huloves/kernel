@@ -8,6 +8,9 @@
 /*自定义通用函数类型，它将在很多线程函数中作为参数类型*/
 typedef void thread_func(void*);
 
+extern struct list thread_ready_list;   //就绪队列
+extern struct list thread_all_list;   //所有任务队列
+
 /*进程或线程的状态*/
 enum task_status
 {

@@ -33,5 +33,7 @@ void* get_kernel_pages(uint32_t pg_cnt);
 void* get_user_pages(uint32_t pg_cnt);
 void* get_a_page(enum pool_flags pf, uint32_t vaddr);
 void mem_init(void);
+/*得到虚拟地址映射到的物理地址*/
+uint32_t addr_v2p(uint32_t vaddr);
 
 #endif

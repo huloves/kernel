@@ -10,8 +10,6 @@
 #include "list.h"
 
 extern void intr_exit(void);   //外部函数，从中断返回
-extern struct list thread_ready_list;   //就绪队列
-extern struct list thread_all_list;   //所有任务队列
 
 /*构建用户进程初始上下文信息，用户进程是从文件系统加载到内存的，进程名是进程的文件名*/
 void start_process(void* filename_)
@@ -46,7 +44,7 @@ void page_dir_activate(struct task_struct* p_thread)
     }
 
     //更新页目录寄存器cr3，使新页表生效
-    asm volatile ("movl %0, &&cr3" : : "r"(pagedir_phy_addr) : "memory");
+    asm volatile ("movl %0, %%cr3" : : "r"(pagedir_phy_addr) : "memory");
 }
 
 /*激活线程或进程的页表，更新tss中的esp0为进程的特权级0的栈*/
@@ -61,7 +59,7 @@ void process_activate(struct task_struct* p_thread)
     }
 }
 
-/**创建页目录表，将当前页表的表示内核空间的pde复制，成功返回页目录的虚拟地址，否则返回NULL**/
+/**创建用户进程的页目录表，将当前页表的表示内核空间的pde复制，成功返回页目录的虚拟地址，否则返回NULL**/
 uint32_t* create_page_dir(void)
 {
     //用户进程的页表不能然用户直接访问到，所以在内核空间来申请
@@ -71,16 +69,18 @@ uint32_t* create_page_dir(void)
         return NULL;
     }
 
-    //1. 复制页表 page_dir_vaddr + 0x300 * 4 是内核页目录的第768项
+    //1. 复制页表 page_dir_vaddr + 0x300(768) * 4 是内核页目录的第768项
     memcpy((uint32_t*)((uint32_t)page_dir_vaddr + 0x300 * 4), (uint32_t*)(0xfffff000 + 0x300 * 4), 1024);   //复制内核内存空间
     
     //2. 更新页目录地址
-    uint32_t new_page_dir_phy_addr = addr_v2p((uint32_t)page_dir_vaddr);
+    uint32_t new_page_dir_phy_addr = addr_v3p((uint32_t)page_dir_vaddr);   //将page_dir_vaddr虚拟地址转换为物理地址
     page_dir_vaddr[1023] = new_page_dir_phy_addr | PG_US_U | PG_RW_W | PG_P_1;//页目录地址是存入在页目录的最后一项，
                                                                               //更新页目录地址为新页目录的物理地址
 
     return page_dir_vaddr;
 }
+
+//每天看着代码也没有觉得烦，偶尔想一些想见的人就开始烦。
 
 /*创建用户进程虚拟地址位图*/
 void create_user_vaddr_bitmap(struct task_struct* user_prog)
