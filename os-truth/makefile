@@ -96,7 +96,7 @@ $(BUILD_DIR)/syscall.o: lib/user/syscall.c lib/user/syscall.h
 	$(CC) $(CFLAGS) $< -o $@
 
 $(BUILD_DIR)/syscall-init.o: userprog/syscall-init.c userprog/syscall-init.h \
-					lib/stdint.h thread/thread.h lib/user/syscall.h
+					lib/stdint.h thread/thread.h lib/user/syscall.h lib/kernel/print.h
 	$(CC) $(CFLAGS) $< -o $@
 
 ###### 汇编代码编译 ######

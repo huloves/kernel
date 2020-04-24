@@ -4,11 +4,9 @@
 %define ERROR_CODE nop                  ;若在相关的异常中CPU已经压入了错误码，为保持栈中格式统一，这里不作操作
 %define ZERO push 0                     ;若在相关的异常中CPU没有压入错误码，未同意栈中格式，手工压入一个0
 
-extern put_str                          ;声明外部函数
 extern idt_table                        ;中断处理函数数组
 
 section .data
-intr_str db "interrupt occur!", 0x0a, 0
 global intr_entry_table
 intr_entry_table:
 
@@ -101,7 +99,6 @@ VECTOR 0x2c,ZERO   ;ps/2鼠标
 VECTOR 0x2d,ZERO   ;fpu浮点单元异常
 VECTOR 0x2e,ZERO   ;硬盘
 VECTOR 0x2f,ZERO   ;保留
-;VECTOR 0x80,ZERO   ;系统调用中断
 
 ;============ 0x80号中断 ============
     [bits 32]
@@ -130,5 +127,5 @@ syscall_handler:
     add esp,12  ;跨过上面的三个参数
 
     ;4. 将call调用后的返回值存入内核栈中eax的位置
-    mov [esp + 8 * 4], eax
+    mov [esp + 8*4], eax
     jmp intr_exit   ;中断返回，恢复上下文

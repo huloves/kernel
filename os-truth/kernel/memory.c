@@ -8,8 +8,6 @@
 #include "sync.h"
 #include "thread.h"
 
-#define PG_SIZE 4096   //4KB页表大小
-
 /******* 位图地址 ******
  * 因为0xc009f000是内核主线程栈顶，0xc009e000是内核主线程的pcd。
  * 一个页框大小的位图可表示128MB内存，位图位置安排在地址0xc009a000，
@@ -162,10 +160,12 @@ void* malloc_page(enum pool_flags pf, uint32_t pg_cnt)
 /*从内核物理内存池中申请1页内存，成功返回虚拟地址，失败返回NULL*/
 void* get_kernel_pages(uint32_t pg_cnt)
 {
+    lock_acquire(&kernel_pool.lock);
     void* vaddr = malloc_page(PF_KERNEL, pg_cnt);
-    if(vaddr == NULL) {   //若分配的地址不为空，将页框清0后返回
-        memset(vaddr, 0, pg_cnt);
+    if(vaddr != NULL) {   //若分配的地址不为空，将页框清0后返回
+        memset(vaddr, 0, pg_cnt * PG_SIZE);
     }
+    lock_release(&kernel_pool.lock);
     return vaddr;
 }
 
