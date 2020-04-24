@@ -4,7 +4,8 @@
             "name": "Linux",
             "includePath": [
                 "${workspaceFolder}/**",
-                "/home/huloves/kernel/os-truth/kernel"
+                "/home/huloves/kernel/os-truth/kernel",
+                "/home/huloves/kernel/os-truth/lib/user"
             ],
             "defines": [],
             "compilerPath": "/usr/bin/gcc",
