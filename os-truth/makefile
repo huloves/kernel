@@ -100,7 +100,8 @@ $(BUILD_DIR)/syscall-init.o: userprog/syscall-init.c userprog/syscall-init.h \
 	$(CC) $(CFLAGS) $< -o $@
 
 $(BUILD_DIR)/stdio.o: lib/stdio.c lib/stdio.h \
-					lib/stdint.h kernel/global.h lib/user/syscall.h
+					lib/stdint.h kernel/global.h lib/user/syscall.h \
+					lib/string.h kernel/interrupt.h
 	$(CC) $(CFLAGS) $< -o $@
 
 ###### 汇编代码编译 ######

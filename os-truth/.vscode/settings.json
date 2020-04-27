@@ -1,7 +1,8 @@
 {
     "files.associations": {
         "stdint.h": "c",
-        "syscall.h": "c"
+        "syscall.h": "c",
+        "print.h": "c"
     },
     "C_Cpp.intelliSenseEngineFallback": "Enabled",
     "C_Cpp.dimInactiveRegions": false
