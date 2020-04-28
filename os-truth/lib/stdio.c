@@ -58,7 +58,7 @@ uint32_t vsprintf(char* str, const char* format, va_list ap)
             case 'd':
                 arg_int = va_arg(ap, int);
                 if(arg_int < 0) {
-                    arg_int = 0 - arg_int;
+                    arg_int = 0 - arg_int;   //获得相反数
                     *buf_ptr++ = '-';
                 }
                 itoa(arg_int, &buf_ptr, 10);

@@ -8,6 +8,7 @@
 #include "console.h"
 #include "interrupt.h"
 #include "list.h"
+#include "memory.h"
 
 extern void intr_exit(void);   //外部函数，从中断返回
 
@@ -102,6 +103,7 @@ void process_execute(void* filename, char* name)
     create_user_vaddr_bitmap(thread);   //初始化用户进程起始虚拟地址，创建用户进程的内存位图，并写入pcb.userprog_vaddr.vaddr_bit_map
     thread_create(thread, start_process, filename);   //初始化线程栈，start_process的作用是初始化中断栈
     thread->pgdir = create_page_dir();   //初始化用户进程的页目录表
+    block_desc_init(thread->u_block_desc);   //初始化用户内存块描述符表
 
     enum intr_status ole_status = intr_disable();
     ASSERT(!elem_find(&thread_ready_list, &thread->general_tag));

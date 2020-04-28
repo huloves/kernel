@@ -19,8 +19,8 @@ int main(void) {
    put_str("I am kernel\n");
    init_all();
 
-   process_execute(u_prog_a, "u_prog_a");
-   process_execute(u_prog_b, "u_prog_b");
+   //process_execute(u_prog_a, "u_prog_a");
+   //process_execute(u_prog_b, "u_prog_b");
 
    console_put_str(" I am main, my pid:0x");
    console_put_int(sys_getpid());
@@ -35,8 +35,9 @@ int main(void) {
 /* 在线程中运行的函数 */
 void k_thread_a(void* arg) {     
    char* para = arg;
-   console_put_str(" I am thread_a, my pid:0x");
-   console_put_int(sys_getpid());
+   void* addr = sys_malloc(33);
+   console_put_str(" I am thread_a, sys_malloc:0x");
+   console_put_int((int)addr);
    console_put_char('\n');
    while(1);
 }
@@ -44,8 +45,9 @@ void k_thread_a(void* arg) {
 /* 在线程中运行的函数 */
 void k_thread_b(void* arg) {     
    char* para = arg;
-   console_put_str(" I am thread_b, my pid:0x");
-   console_put_int(sys_getpid());
+   void* addr = sys_malloc(63);
+   console_put_str(" I am thread_b, sys_malloc:0x");
+   console_put_int((int)addr);
    console_put_char('\n');
    while(1);
 }

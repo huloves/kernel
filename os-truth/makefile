@@ -50,7 +50,8 @@ $(BUILD_DIR)/bitmap.o: lib/kernel/bitmap.c lib/kernel/bitmap.h \
 
 $(BUILD_DIR)/memory.o: kernel/memory.c kernel/memory.h lib/stdint.h  lib/kernel/bitmap.h \
         			kernel/global.h kernel/debug.h lib/kernel/print.h kernel/debug.h \
-					lib/kernel/io.h kernel/interrupt.h lib/string.h thread/sync.h
+					lib/kernel/io.h kernel/interrupt.h lib/string.h thread/sync.h \
+					kernel/memory.h
 	$(CC) $(CFLAGS) $< -o $@
 
 $(BUILD_DIR)/thread.o: thread/thread.c thread/thread.h \
@@ -89,7 +90,8 @@ $(BUILD_DIR)/tss.o: userprog/tss.c userprog/tss.h \
 $(BUILD_DIR)/process.o: userprog/process.c userprog/process.h \
 					lib/stdint.h thread/thread.h kernel/memory.h \
 					kernel/debug.h userprog/tss.h lib/string.h \
-					device/console.h kernel/interrupt.h lib/kernel/list.h
+					device/console.h kernel/interrupt.h lib/kernel/list.h \
+					kernel/memory.h
 	$(CC) $(CFLAGS) $< -o $@
 
 $(BUILD_DIR)/syscall.o: lib/user/syscall.c lib/user/syscall.h
