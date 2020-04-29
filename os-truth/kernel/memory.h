@@ -54,5 +54,7 @@ void mem_init(void);
 uint32_t addr_v2p(uint32_t vaddr);
 /*在堆中申请size字节内存*/
 void* sys_malloc(uint32_t size);
+/*将物理地址pg_phy_addr回收到物理内存池*/
+void pfree(uint32_t pg_phy_addr);
 
 #endif

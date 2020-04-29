@@ -433,6 +433,55 @@ void* sys_malloc(uint32_t size)
     }
 }
 
+/*将物理地址pg_phy_addr回收到物理内存池*/
+void pfree(uint32_t pg_phy_addr)
+{
+    struct pool* mem_pool;
+    uint32_t bit_idx = 0;
+    if(pg_phy_addr >= user_pool.phy_addr_start) {   //用户物理内存池
+        mem_pool = &user_pool;
+        bit_idx = (pg_phy_addr - user_pool.phy_addr_start) / PG_SIZE;
+    } else {   //内核物理内存池
+        mem_pool = &kernel_pool;
+        bit_idx = (pg_phy_addr - kernel_pool.phy_addr_start) / PG_SIZE;
+    }
+    bitmap_set(&mem_pool, bit_idx, 0);   //将位图中该位清0
+}
+
+/*去掉页表中虚拟地址vaddr的映射，只去掉vaddr的pte*/
+static void page_table_pte_remove(uint32_t vaddr)
+{
+    uint32_t *pte = pte_ptr(vaddr);   //获得虚拟地址的pte地址
+    *pte &= ~PG_P_1;   //将pte的p位置0
+    asm volatile ("invlpg %0" : : "m"(vaddr) : "memory");   //更新块表tlb
+}
+
+/*在虚拟地址池中释放以_vaddr起始的连续pg_cnt个虚拟地址页*/
+static void vaddr_remove(enum pool_flags pf, void* _vaddr, uint32_t pg_cnt)
+{
+    uint32_t bit_idx_start = 0, vaddr = (uint32_t)_vaddr, cnt = 0;
+
+    if(pf == PF_KERNEL) {
+        bit_idx_start = (vaddr - kernel_vaddr.vaddr_start) / PG_SIZE;
+        while(cnt < pg_cnt) {
+            bitmap_set(&kernel_vaddr.vaddr_bitmap, bit_idx_start + cnt++, 0);
+        }
+    } else {
+        struct task_struct* cur_thread = running_thread();
+        bit_idx_start = (vaddr - cur_thread->userprog_vaddr.vaddr_start) / PG_SIZE;
+        while(cnt < pg_cnt) {
+            bitmap_set(&cur_thread->userprog_vaddr.vaddr_bitmap, bit_idx_start + cnt++, 0);
+        }
+    }
+}
+
+/*释放以虚拟地址vaddr起始的cnt个物理页框*/
+void mfree_page(enum pool_flags pf, void* _vaddr, uint32_t pg_cnt)
+{
+    uint32_t pg_phy_addr;
+    uint32_t vaddr = (int32_t)_vaddr, page_cnt = 0;
+}
+
 /*内存管理部分初始化入口*/
 void mem_init()
 {
