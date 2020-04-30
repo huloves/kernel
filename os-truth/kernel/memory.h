@@ -39,7 +39,7 @@ struct mem_block
 struct mem_block_desc
 {
     uint32_t block_size;   //内存块大小，描述本描述符的规格
-    uint32_t block_per_arena;   //本arena中可容纳此memory_block的数量
+    uint32_t blocks_per_arena;   //本arena中可容纳此memory_block的数量
     struct list free_list;   //空闲内存块链表，目前可用的mem_block链表
 };
 
@@ -56,5 +56,7 @@ uint32_t addr_v2p(uint32_t vaddr);
 void* sys_malloc(uint32_t size);
 /*将物理地址pg_phy_addr回收到物理内存池*/
 void pfree(uint32_t pg_phy_addr);
+/*回收内存ptr*/
+void sys_free(void* ptr);
 
 #endif

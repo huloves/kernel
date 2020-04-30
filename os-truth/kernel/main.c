@@ -1,3 +1,4 @@
+#include "print.h"
 #include "init.h"
 #include "thread.h"
 #include "interrupt.h"
@@ -6,26 +7,19 @@
 #include "syscall-init.h"
 #include "syscall.h"
 #include "stdio.h"
-#include "print.h"
+#include "memory.h"
 
 void k_thread_a(void*);
 void k_thread_b(void*);
 void u_prog_a(void);
 void u_prog_b(void);
 
-int prog_a_pid = 0, prog_b_pid = 0;
-
 int main(void) {
    put_str("I am kernel\n");
    init_all();
-
-   //process_execute(u_prog_a, "u_prog_a");
-   //process_execute(u_prog_b, "u_prog_b");
-
-   console_put_str(" I am main, my pid:0x");
-   console_put_int(sys_getpid());
-   console_put_char('\n');
    intr_enable();
+   process_execute(u_prog_a, "u_prog_a");
+   process_execute(u_prog_b, "u_prog_b");
    thread_start("k_thread_a", 31, k_thread_a, "I am thread_a");
    thread_start("k_thread_b", 31, k_thread_b, "I am thread_b ");
    while(1);
@@ -34,21 +28,80 @@ int main(void) {
 
 /* 在线程中运行的函数 */
 void k_thread_a(void* arg) {     
-   char* para = arg;
-   void* addr = sys_malloc(33);
-   console_put_str(" I am thread_a, sys_malloc:0x");
-   console_put_int((int)addr);
+   void* addr1 = sys_malloc(256);
+   void* addr2 = sys_malloc(255);
+   void* addr3 = sys_malloc(254);
+   console_put_str(" thread_a malloc addr:0x");
+   console_put_int((int)addr1);
+   console_put_char(',');
+   console_put_int((int)addr2);
+   console_put_char(',');
+   console_put_int((int)addr3);
    console_put_char('\n');
+
+   int cpu_delay = 100000;
+   while(cpu_delay-- > 0);
+   sys_free(addr1);
+   sys_free(addr2);
+   sys_free(addr3);
    while(1);
 }
 
 /* 在线程中运行的函数 */
 void k_thread_b(void* arg) {     
    char* para = arg;
-   void* addr = sys_malloc(63);
-   console_put_str(" I am thread_b, sys_malloc:0x");
-   console_put_int((int)addr);
-   console_put_char('\n');
+   void* addr1;
+   void* addr2;
+   void* addr3;
+   void* addr4;
+   void* addr5;
+   void* addr6;
+   void* addr7;
+   void* addr8;
+   void* addr9;
+   int max = 10;
+   console_put_str(" thread_b start\n");
+   while (max-- > 0) {
+      int size = 9;
+      addr1 = sys_malloc(size);
+      size *= 2; 
+      addr2 = sys_malloc(size);
+      size *= 2; 
+      sys_free(addr2);
+      addr3 = sys_malloc(size);
+      sys_free(addr1);
+      addr4 = sys_malloc(size);
+      addr5 = sys_malloc(size);
+      addr6 = sys_malloc(size);
+      sys_free(addr5);
+      size *= 2; 
+      addr7 = sys_malloc(size);
+      sys_free(addr6);
+      sys_free(addr7);
+      sys_free(addr3);
+      sys_free(addr4);
+
+      size *= 2; size *= 2; size *= 2; 
+      addr1 = sys_malloc(size);
+      addr2 = sys_malloc(size);
+      addr3 = sys_malloc(size);
+      addr4 = sys_malloc(size);
+      addr5 = sys_malloc(size);
+      addr6 = sys_malloc(size);
+      addr7 = sys_malloc(size);
+      addr8 = sys_malloc(size);
+      addr9 = sys_malloc(size);
+      sys_free(addr1);
+      sys_free(addr2);
+      sys_free(addr3);
+      sys_free(addr4);
+      sys_free(addr5);
+      sys_free(addr6);
+      sys_free(addr7);
+      sys_free(addr8);
+      sys_free(addr9);
+   }
+   console_put_str(" thread_b end\n");
    while(1);
 }
 
