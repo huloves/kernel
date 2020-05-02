@@ -56,6 +56,8 @@ uint32_t addr_v2p(uint32_t vaddr);
 void* sys_malloc(uint32_t size);
 /*将物理地址pg_phy_addr回收到物理内存池*/
 void pfree(uint32_t pg_phy_addr);
+/*释放以虚拟地址vaddr起始的cnt个物理页框*/
+void mfree_page(enum pool_flags pf, void* _vaddr, uint32_t pg_cnt);
 /*回收内存ptr*/
 void sys_free(void* ptr);
 
