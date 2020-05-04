@@ -5,7 +5,8 @@
             "includePath": [
                 "${workspaceFolder}/**",
                 "/home/huloves/kernel/os-truth/kernel",
-                "/home/huloves/kernel/os-truth/lib/user"
+                "/home/huloves/kernel/os-truth/lib/user",
+                "/home/huloves/kernel/os-truth/lib/"
             ],
             "defines": [],
             "compilerPath": "/usr/bin/gcc",
