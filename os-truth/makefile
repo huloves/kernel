@@ -115,7 +115,7 @@ $(BUILD_DIR)/stdio-kernel.o: lib/kernel/stdio-kernel.c lib/kernel/stdio-kernel.h
 
 $(BUILD_DIR)/ide.o: device/ide.c device/ide.h \
 					lib/stdint.h kernel/global.h lib/std.h lib/kernel/stdio-kernel.h \
-					kernel/debug.h
+					kernel/debug.h lib/kernel/io.h
 	$(CC) $(CFLAGS) $< -o $@
 
 ###### 汇编代码编译 ######

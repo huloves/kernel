@@ -104,6 +104,8 @@ struct task_struct* thread_start(char* name, int prio, thread_func function, voi
 void schedule(void);
 void thread_block(enum task_status stat);
 void thread_unblock(struct task_struct* pthread);
+/*主动让出cpu，换其他线程运行*/
+void thread_yield(void);
 void thread_init(void);
 
 #endif
