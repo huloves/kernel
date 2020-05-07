@@ -3,6 +3,7 @@
 #include "print.h"
 #include "thread.h"
 #include "debug.h"
+#include "stdint.h"
 
 #define IRQ0_FREQUENCY      100   //时钟中断的频率为1s 100次
 #define INPUT_FREQUENCY     1193180
