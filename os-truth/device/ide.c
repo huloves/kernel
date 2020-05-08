@@ -299,20 +299,20 @@ static void partition_scan(struct disk* hd, uint32_t ext_lba)
     struct boot_sector* bs = sys_malloc(sizeof(struct boot_sector));
     ide_read(hd, ext_lba, bs, 1);
     uint8_t part_idx = 0;
-    struct partition_table_entry* p = bs->partition_table;   //存储分区表项起始地址
+    struct partition_table_entry* p = bs->partition_table;   //p指向分区表数组
 
     //遍历分区表4个分区表项
     while(part_idx++ < 4) {
         if(p->fs_type == 0x5) {
-            if(ext_lba_base != 0) {   //若为拓展分区
+            if(ext_lba_base != 0) {   //若为子拓展分区，EBR引导扇区中的分区表
                 //子扩展分区的start_lba是相对于主引导扇区中的总扩展分区地址
                 partition_scan(hd, p->start_lba + ext_lba_base);
-            } else {   //ext_lba_base 为0表示是第一次读取引导块，也就是主引导记录所在的扇
+            } else {   //ext_lba_base 为0表示是第一次读取引导块，也就是主引导记录所在的扇区，MBR引导扇区中的分区表
                 //记录下扩展分区的起始lba地址，后面所有的拓展分区地址都相对于此
                 ext_lba_base = p->start_lba;   //主扩展分区的lba起始地址
                 partition_scan(hd, p->start_lba);
             }
-        } else if(p->fs_type != 0) {   //若是有效的分区类型
+        } else if(p->fs_type != 0) {   //若是有效的分区类型，1(p)有效，2,3无效，4有效(e)
             if(ext_lba == 0) {   //此时全是主分区
                 hd->prim_parts[p_no].start_lba = ext_lba + p->start_lba;   //该分区的起始lba地址
                 hd->prim_parts[p_no].sec_cnt = p->sec_cnt;   //该分区的扇区数
@@ -338,7 +338,7 @@ static void partition_scan(struct disk* hd, uint32_t ext_lba)
 }
 
 /*打印分区信息*/
-static bool partition_info(struct list_elem* pelem, int arg_UNUSED)
+static bool partition_info(struct list_elem* pelem, int arg UNUSED)
 {
     struct partition* part = elem2entry(struct partition, part_tag, pelem);
     printk("   %s start_lba:0x%x, sec_cnt:0x%x\n", part->name, part->start_lba, part->sec_cnt);

@@ -72,6 +72,9 @@
 #define true  1
 #define PG_SIZE 4096
 
+/*------------ gcch属性 ------------*/
+#define UNUSED __attribute__((unused))
+
 struct gdt_desc
 {
     uint16_t limit_low_word;
