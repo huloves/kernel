@@ -44,6 +44,7 @@ struct ide_channel
 
 extern uint8_t channel_cnt;   //按硬盘数计算的通道数
 extern struct ide_channel channels[2];   //通道数组，有两个ide通道
+extern struct list partition_list;   //分区队列
 
 /*从硬盘读取sec_cnt个扇区到buf*/
 void ide_read(struct disk* hd, uint32_t lba, void* buf, uint32_t sec_cnt);

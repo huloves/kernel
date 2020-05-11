@@ -121,7 +121,8 @@ $(BUILD_DIR)/ide.o: device/ide.c device/ide.h \
 
 $(BUILD_DIR)/fs.o: fs/fs.c fs/fs.h \
 					fs/super_block.h fs/inode.h fs/dir.h device/ide.h lib/stdint.h \
-					kernel/global.h lib/kernel/stdio-kernel.h lib/string.h kernel/debug.h kernel/memory.h
+					kernel/global.h lib/kernel/stdio-kernel.h lib/string.h \
+					kernel/debug.h kernel/memory.h lib/kernel/list.h
 	$(CC) $(CFLAGS) $< -o $@
 
 ###### 汇编代码编译 ######
