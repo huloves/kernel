@@ -6,9 +6,12 @@
 #include "stdint.h"
 #include "global.h"
 #include "stdio-kernel.h"
+#include "string.h"
+#include "debug.h"
+#include "memory.h"
 
 /*格式化分区，也就是初始化分区的元信息，创建文件系统*/
-static void partition_format(struct disk* hd, struct partition* part)
+static void partition_format(struct partition* part)
 {
     //block_bitmap_init 为方便实现，一个块大小是以扇区
     uint32_t boot_sector_sects = 1;   //ebr扇区
@@ -29,9 +32,9 @@ static void partition_format(struct disk* hd, struct partition* part)
     sb.magic = 0x19590318;
     sb.sec_cnt = part->sec_cnt;
     sb.inode_cnt = MAX_FILES_PER_PART;
-    sb.part_lba_start = part->start_lba;
+    sb.part_lba_base = part->start_lba;
 
-    sb.block_bitmap_lba = sb.part_lba_start + 2;   //第0块是引导块，第1块是超级块
+    sb.block_bitmap_lba = sb.part_lba_base + 2;   //第0块是引导块，第1块是超级块
     sb.block_bitmap_sects = block_bitmap_sects;
 
     sb.inode_bitmap_lba = sb.block_bitmap_lba + sb.block_bitmap_sects;
@@ -41,11 +44,123 @@ static void partition_format(struct disk* hd, struct partition* part)
     sb.inode_table_sects = inode_table_sects;
 
     sb.data_start_lba = sb.inode_table_lba + sb.inode_table_sects;
-    sb.root_inode_no = 0;   //super_block lba
+    sb.root_inode_no = 0;   //super_block inode-number
     sb.dir_entry_size = sizeof(struct dir_entry);
 
     printk("%s info:\n", part->name);
-    printk("   magic:0x%x\n   part_lba_base:0x%x\n   all_sectors:0x%x\n   inode_cnt:0x%x\n   block_bitmap_lba:%x\n   block_bitmap_sectors:0x%x\n   inode_bitmap_lba:0x%x\n   inode_bitmap_sectors:0x%x\n   inode_table_lba:0x%x\n   inode_table_sectors:0x%x\n   data_start_lba:0x%x\n", \
-           sb.magic, sb.part_lba_start, sb.sec_cnt, sb.inode_cnt, sb.block_bitmap_lba, sb.block_bitmap_sects, sb.inode_bitmap_lba, \
-           sb.inode_bitmap_sects, sb.inode_table_lba, sb.inode_table_sects, sb.data_start_lba);
+    //printk("   magic:0x%x\n   part_lba_base:0x%x\n   all_sectors:0x%x\n   inode_cnt:0x%x\n   block_bitmap_lba:%x\n   block_bitmap_sectors:0x%x\n   inode_bitmap_lba:0x%x\n   inode_bitmap_sectors:0x%x\n   inode_table_lba:0x%x\n   inode_table_sectors:0x%x\n   data_start_lba:0x%x\n", \
+    //       sb.magic, sb.part_lba_base, sb.sec_cnt, sb.inode_cnt, sb.block_bitmap_lba, sb.block_bitmap_sects, sb.inode_bitmap_lba, \
+    //       sb.inode_bitmap_sects, sb.inode_table_lba, sb.inode_table_sects, sb.data_start_lba);
+    printk("   magic:0x%x\n   part_lba_base:0x%x\n   all_sectors:0x%x\n   inode_cnt:0x%x\n   block_bitmap_lba:0x%x\n   block_bitmap_sectors:0x%x\n   inode_bitmap_lba:0x%x\n   inode_bitmap_sectors:0x%x\n   inode_table_lba:0x%x\n   inode_table_sectors:0x%x\n   data_start_lba:0x%x\n", sb.magic, sb.part_lba_base, sb.sec_cnt, sb.inode_cnt, sb.block_bitmap_lba, sb.block_bitmap_sects, sb.inode_bitmap_lba, sb.inode_bitmap_sects, sb.inode_table_lba, sb.inode_table_sects, sb.data_start_lba);
+
+    struct disk* hd = part->my_disk;
+    // 1. 将超级块写入本分区的1扇区
+    ide_write(hd, part->start_lba + 1, &sb, 1);   //跨过引导扇区
+    printk("   super_block_lba:0x%x\n", part->start_lba + 1);
+
+    // 找出数据量最大的元信息，用其尺寸做存储缓冲区
+    uint32_t buf_size = (sb.block_bitmap_sects >= sb.inode_bitmap_sects ? sb.block_bitmap_sects : sb.inode_bitmap_sects);
+    buf_size = (buf_size >= sb.inode_table_sects ? buf_size : sb.inode_table_sects) * SECTOR_SIZE;   //最终缓冲区大小
+    uint8_t* buf = (uint8_t*)sys_malloc(buf_size);   //申请的内存由内存管理系统清0后返回
+
+    // 2. 将块位图初始化并写入sb.block_bitmap_lba
+    // 初始化块位图
+    buf[0] |= 0x01;   //第0个块预留给根目录，位图中先占位
+    uint32_t block_bitmap_last_byte = block_bitmap_bit_len / 8;
+    uint8_t block_bitmap_last_bit = block_bitmap_bit_len % 8;
+    uint32_t last_size = SECTOR_SIZE - (block_bitmap_last_byte % SECTOR_SIZE);   //位图所在最有一个扇区中，不足一扇区的其余部分
+
+    // ①先将位图的最后一字节到其所在的扇区的结束全置为1，即超出实际块数的部分直接置为已占用
+    memset(&buf[block_bitmap_last_byte], 0xff, last_size);
+    // ②再将上一步中覆盖的最后一字节内的有效位重新置0
+    uint8_t bit_idx = 0;
+    while(bit_idx <= block_bitmap_last_bit) {
+        buf[block_bitmap_last_byte] &= ~(1 << bit_idx++);
+    }
+    ide_write(hd, sb.block_bitmap_lba, buf, sb.block_bitmap_sects);   //写入硬盘
+
+    // 3. 将inode位图初始化并写入sb.inode_bitmap_lba
+    memset(buf, 0, buf_size);   //清空缓冲区
+    buf[0] |= 0x1;   //第0个inode分配给了根目录
+    ide_write(hd, sb.inode_bitmap_lba, buf, sb.inode_bitmap_sects);   //inode_bitmap占一个扇区没有无效位，直接写入硬盘
+
+    // 4. 将inode数组初始化并写入sb.inode_table_lba
+    memset(buf, 0, buf_size);
+    struct inode* i = (struct inode*)buf;
+    i->i_size = sb.dir_entry_size * 2;   //初始化根目录inode .和..
+    i->i_no = 0;   //根目录占inode数组中第0个inode
+    i->i_sectors[0] = sb.data_start_lba;   //由于上面的memset，i_sectors数组的其他元素都初始化为0
+    ide_write(hd, sb.inode_table_lba, buf, sb.inode_table_sects);
+
+    // 5. 将根目录写入sb.data_start_lba
+    memset(buf, 0, buf_size);
+    struct dir_entry* p_de = (struct dir_entry*)buf;
+    
+    // 初始化当前目录"."
+    memcpy(p_de->filename, ".", 1);
+    p_de->i_no = 0;
+    p_de->f_type = FT_DIRECTORY;
+    p_de++;
+
+    // 初始化当前目录父目录
+    memcpy(p_de->filename, "..", 2);
+    p_de->i_no = 0;
+    p_de->f_type = FT_DIRECTORY;
+
+    //sb.data_start_lba已经分配给根目录，里面是根目录的目录项
+    ide_write(hd, sb.data_start_lba, buf, 1);
+
+    printk("   root_dir_lba:0x%x\n", sb.data_start_lba);
+    printk("%s format done\n", part->name);
+    sys_free(buf);
+}
+
+/*在磁盘上搜索文件系统，若没有则格式化分区创建文件系统*/
+void filesys_init()
+{
+    uint8_t channel_no = 0, dev_no, part_idx = 0;
+
+    //sb_buf用来存储硬盘上读入的超级块
+    struct super_block* sb_buf = (struct super_block*)sys_malloc(SECTOR_SIZE);
+
+    if(sb_buf == NULL) {
+        PANIC("alloc memory failed!");
+    }
+    printk("searching filesystem......\n");
+    while(channel_no < channel_cnt) {
+        dev_no = 0;
+        while(dev_no < 2) {
+            if(dev_no == 0) {
+                dev_no++;
+                continue;
+            }
+            struct disk* hd = &channels[channel_no].devices[dev_no];
+            struct partition* part = hd->prim_parts;
+            while(part_idx < 12) {   //4个主分区+8个逻辑分区
+                if(part_idx == 4) {
+                    part = hd->logic_parts;
+                }            
+                //partition中的成员默认为0.若partition未初始化，则partition的成员仍未0
+                //处理存在的分区
+                if(part->sec_cnt != 0) {
+                    memset(sb_buf, 0, SECTOR_SIZE);
+
+                    //读取分区的超级块，分局魔数是否正确来判断是否存在文件系统
+                    ide_read(hd, part->start_lba + 1, sb_buf, 1);
+                    //只支持自己的文件系统，若磁盘上已经有文件系统就不在格式化了
+                    if(sb_buf->magic == 0x19590318) {
+                        printk("%s has filesystem\n", part->name);
+                    } else {
+                        printk("formatting %s's partition %s......\n", hd->name, part->name);
+                        partition_format(part);
+                    }
+                }
+                part_idx++;
+                part++;   //下一个分区
+            }
+            dev_no++;   //下一个磁盘
+        }
+        channel_no++;   //下一个通道
+    }
+    sys_free(sb_buf);
 }

@@ -42,6 +42,9 @@ struct ide_channel
     struct disk devices[2];   //一个通道上连接两个硬盘，一主一从
 };
 
+extern uint8_t channel_cnt;   //按硬盘数计算的通道数
+extern struct ide_channel channels[2];   //通道数组，有两个ide通道
+
 /*从硬盘读取sec_cnt个扇区到buf*/
 void ide_read(struct disk* hd, uint32_t lba, void* buf, uint32_t sec_cnt);
 /*将buf中sec_cnt扇区数据写入硬盘*/
@@ -49,6 +52,6 @@ void ide_write(struct disk* hd, uint32_t lba, void* buf, uint32_t sec_cnt);
 /*硬盘中断处理程序*/
 void intr_hd_handler(uint8_t irq_no);
 /*硬盘数据结构初始化*/
-void ide_init();
+void ide_init(void);
 
 #endif

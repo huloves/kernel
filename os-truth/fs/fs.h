@@ -14,4 +14,7 @@ enum file_types
     FT_DIRECTORY  //目录
 };
 
+/*在磁盘上搜索文件系统，若没有则格式化分区创建文件系统*/
+void filesys_init(void);
+
 #endif

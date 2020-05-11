@@ -205,7 +205,7 @@ void ide_write(struct disk* hd, uint32_t lba, void* buf, uint32_t sec_cnt)
     select_disk(hd);
 
     uint32_t secs_op;   //每次操作的扇区数
-    uint32_t secs_done;   //已完成的扇区数
+    uint32_t secs_done = 0;   //已完成的扇区数
     while(secs_done < sec_cnt) {
         if(secs_done + 256 < sec_cnt) {
             secs_op = 256;
