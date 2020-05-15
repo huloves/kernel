@@ -22,4 +22,9 @@ struct dir_entry
     enum file_types f_type;   //文件类型
 };
 
+/*打开根目录*/
+void open_dir(struct partition* part);
+/*在分区part上打开i节点为inode_no的目录并返回目录指针*/
+struct dir* dir_open(struct partition* part, uint32_t inode_no);
+
 #endif
