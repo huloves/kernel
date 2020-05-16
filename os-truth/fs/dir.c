@@ -9,6 +9,7 @@
 #include "global.h"
 #include "stdio-kernel.h"
 #include "string.h"
+#include "debug.h"
 
 struct dir root_dir;   //根目录
 
@@ -84,5 +85,121 @@ bool search_dir_entry(struct partition* part, struct dir* pdir, const char* name
     }
     sys_free(buf);
     sys_free(all_blocks);
+    return false;
+}
+
+/*关闭目录*/
+void dir_close(struct dir* dir)
+{
+    //根目录不能关闭
+    if(dir == &root_dir) {
+        return;
+    }
+    inode_close(dir->inode);
+    sys_free(dir);
+}
+
+/*在内存中初始化目录项p_de*/
+void create_dir_entry(char* filename, uint32_t inode_no, uint8_t file_type, struct dir_entry* p_de)
+{
+    ASSERT(strlen(filename <= MAX_FILE_NAME_LEN));
+
+    //初始化目录项
+    memcpy(p_de->filename, filename, strlen(filename));
+    p_de->i_no = inode_no;
+    p_de->f_type = file_type;
+}
+
+/*将目录项p_de写入父目录parent_dir中，io_but由主调函数提供*/
+bool sync_dir_entry(struct dir* parent_dir, struct dir_entry* p_de, void* io_buf)
+{
+    struct inode* dir_inode = parent_dir->inode;
+    uint32_t dir_size = dir_inode->i_size;
+    uint32_t dir_entry_size = cur_part->sb->dir_entry_size;
+
+    ASSERT(dir_size % dir_entry_size == 0);   //dir_size应该是dir_entry_size的整数倍
+
+    uint32_t dir_entrys_per_sec = (512 / dir_entry_size);   //没扇区最大的目录想数目
+    int32_t block_lba = -1;
+
+    //将该目录的所有扇区地址存入all_block
+    uint8_t block_idx = 0;
+    uint32_t all_blocks[140] = {0};   //all_block保存目录所有的块
+
+    //将12个直接块存入all_block
+    while(block_idx < 12) {
+        all_blocks[block_idx] = dir_inode->i_sectors[block_idx];
+        block_idx++;
+    }
+
+    struct dir_entry* dir_e = (struct dir_entry*)io_buf;
+    int32_t block_bitmap_idx = -1;
+
+    //遍历所有块以寻找目录项空位，若已有扇区中没有空闲位，在不超过文件大小的情况下申请新扇区来存储目录项
+    block_idx = 0;
+    while(block_idx < 140) {
+        block_bitmap_idx = -1;
+        if(all_blocks[block_idx] == 0) {
+            block_lba = block_bitmap_alloc(cur_part);
+            if(block_lba == -1) {
+                printk("alloc block bitmap for sync_dir_entry failed\n");
+                return false;
+            }
+            //每分配一个块就同步一次block_bitmap
+            block_bitmap_idx = block_lba - cur_part->sb->data_start_lba;
+            ASSERT(block_bitmap_idx != -1);
+            bitmap_sync(cur_part, block_bitmap_idx, BLOCK_BITMAP);
+
+            block_bitmap_idx = -1;
+            if(block_idx < 12) {   //若是直接块
+                dir_inode->i_sectors[block_idx] = all_blocks[block_idx] = block_lba;
+            } else if(block_idx == 12) {   //若是尚未分配一级间接块表(block_idx等于12表示第0个间接块地址为0)
+                dir_inode->i_sectors[12] = block_lba;   //将上面分配的块作为一级间接块表地址
+                block_lba = -1;
+                block_lba = block_bitmap_alloc(cur_part);   //在分配一个块作为第0个间接块
+                if(block_lba == -1) {
+                    block_bitmap_idx = dir_inode->i_sectors[12] - cur_part->sb->data_start_lba;
+                    bitmap_set(&cur_part->block_bitmap, block_bitmap_idx, 0);
+                    dir_inode->i_sectors[12] = 0;
+                    printk("alloc block bitmap for sync_dir_entry failed\n");
+                    return false;
+                }
+                //每分配一个块就同步一次block_bitmap
+                block_bitmap_idx = block_lba - cur_part->sb->data_start_lba;
+                ASSERT(block_bitmap_idx != -1);
+                bitmap_sync(cur_part, block_bitmap_idx, BLOCK_BITMAP);
+
+                all_blocks[12] = block_lba;
+                //把新分配的第0个间接块地址写入一级间接块表
+                ide_write(cur_part->my_disk, dir_inode->i_sectors[12], all_blocks + 12, 1);
+            } else {
+                all_blocks[block_idx] = block_lba;
+                //把新分配的第(block_idx - 12)个间接块地址写入一级间接块表
+                ide_write(cur_part->my_disk, dir_inode->i_sectors[12], all_blocks + 12, 1);
+            }
+
+            //在将新目录项p_de写入新分配的间接块
+            memset(io_buf, 0, 512);
+            memcpy(io_buf, p_de, dir_entry_size);
+            ide_write(cur_part->my_disk, all_blocks[block_idx], io_buf, 1);
+            dir_inode->i_size += dir_entry_size;
+            return true;
+        }
+        //block_idx块已存在，将其读进内存，然后在该块中查找空目录项
+        ide_read(cur_part->my_disk, all_blocks[block_idx], io_buf, 1);
+        uint8_t dir_entry_idx = 0;
+        while(dir_entry_idx < dir_entrys_per_sec) {
+            if((dir_e + dir_entry_idx)->f_type  == FT_UNKNOWN) {
+                memcpy(dir_e + dir_entry_idx, p_de, dir_entry_size);
+                ide_write(cur_part->my_disk, all_blocks[block_idx], io_buf, 1);
+
+                dir_inode->i_size += dir_entry_size;
+                return true;
+            }
+            dir_entry_idx++;
+        }
+        block_idx++;
+    }
+    printk("directory is full!\n");
     return false;
 }

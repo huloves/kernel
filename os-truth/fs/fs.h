@@ -6,6 +6,8 @@
 #define SECTOR_SIZE 512   //扇区字节大小
 #define BLOCK_SIZE SECTOR_SIZE   //块字节大小
 
+extern struct partition* cur_part;   //默认情况下操作的是哪个分区
+
 /*文件类型*/
 enum file_types
 {
