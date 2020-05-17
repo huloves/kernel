@@ -114,13 +114,13 @@ void create_dir_entry(char* filename, uint32_t inode_no, uint8_t file_type, stru
 bool sync_dir_entry(struct dir* parent_dir, struct dir_entry* p_de, void* io_buf)
 {
     struct inode* dir_inode = parent_dir->inode;
-    uint32_t dir_size = dir_inode->i_size;
+    uint32_t dir_size = dir_inode->i_size;   //记录父目录大小
     uint32_t dir_entry_size = cur_part->sb->dir_entry_size;
 
     ASSERT(dir_size % dir_entry_size == 0);   //dir_size应该是dir_entry_size的整数倍
 
-    uint32_t dir_entrys_per_sec = (512 / dir_entry_size);   //没扇区最大的目录想数目
-    int32_t block_lba = -1;
+    uint32_t dir_entrys_per_sec = (512 / dir_entry_size);   //每扇区最大的目录想数目
+    int32_t block_lba = -1;   //记录分配的块地址
 
     //将该目录的所有扇区地址存入all_block
     uint8_t block_idx = 0;
@@ -189,10 +189,9 @@ bool sync_dir_entry(struct dir* parent_dir, struct dir_entry* p_de, void* io_buf
         ide_read(cur_part->my_disk, all_blocks[block_idx], io_buf, 1);
         uint8_t dir_entry_idx = 0;
         while(dir_entry_idx < dir_entrys_per_sec) {
-            if((dir_e + dir_entry_idx)->f_type  == FT_UNKNOWN) {
+            if((dir_e + dir_entry_idx)->f_type  == FT_UNKNOWN) {   //FT_UNKNOWN = 0，将目录项删除或是初始化后的值都会是0
                 memcpy(dir_e + dir_entry_idx, p_de, dir_entry_size);
                 ide_write(cur_part->my_disk, all_blocks[block_idx], io_buf, 1);
-
                 dir_inode->i_size += dir_entry_size;
                 return true;
             }
