@@ -1,6 +1,11 @@
 #ifndef __FS_FILE_H
 #define __FS_FILE_H
 #include "stdint.h"
+#include "ide.h"
+#include "dir.h"
+#include "global.h"
+
+#define MAX_FILE_OPEN 32   //系统可打开的最大文件数
 
 /*文件结构*/
 struct file
@@ -25,7 +30,8 @@ enum bitmap_type
     BLOCK_BITMAP    //块位图
 };
 
-#define MAX_FILE_OPEN 32   //系统可打开的最大文件数
+/*文件表*/
+extern struct file file_table[MAX_FILE_OPEN];
 
 /*从文件表file_table中获取一个空闲位，成功返回下标，失败返回-1*/
 int32_t get_free_slot_in_global(void);
@@ -37,5 +43,7 @@ int32_t inode_bitmap_alloc(struct partition* part);
 int32_t block_bitmap_alloc(struct partition* part);
 /*将内存中bitmap第bit_idx位所在的512字节同步到硬盘*/
 void bitmap_sync(struct partition* part, uint32_t bit_idx, uint8_t btmp);
+/*创建文件，若成功则返回文件描述符，否则返回-1*/
+int32_t file_create(struct dir* parent_dir, char* filename, uint8_t flag);
 
 #endif

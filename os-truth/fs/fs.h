@@ -1,5 +1,6 @@
 #ifndef __FS_FS_H
 #define __FS_FS_H
+#include "stdint.h"
 
 #define MAX_FILES_PER_PART 4096   //每个分区所支持的最大创建的文件数，最多建立4096个inode
 #define BITS_PER_SECTOR 4096   //每扇区的位数,512(扇区字节大小)*8(一字节位数)
@@ -21,10 +22,10 @@ enum file_types
 /*打开文件的选项*/
 enum oflags
 {
-    O_RDONLY,
-    O_WRONLY,
-    O_RDWR,
-    O_CREAT = 4
+    O_RDONLY,   //001
+    O_WRONLY,   //001
+    O_RDWR,     //011
+    O_CREAT = 4 //100
 };
 
 /*记录查找文件过程中已找到的上级路径，也就是查找文件过程中“走过的地方”*/
@@ -35,6 +36,10 @@ struct path_search_record
     enum file_types file_type;   //找到的是普通文件，还是目录，找不到将为未知类型
 };
 
+/*返回路径深度，比如/a/b/c，深度为3*/
+int32_t path_depth_cnt(char* pathname);
+/*打开或创建文件成功后，返回文件描述符，否则返回-1*/
+int32_t sys_open(const char* pathname, uint8_t flags);
 /*在磁盘上搜索文件系统，若没有则格式化分区创建文件系统*/
 void filesys_init(void);
 

@@ -3,10 +3,10 @@
 #include "stdint.h"
 #include "inode.h"
 #include "fs.h"
+#include "ide.h"
+#include "global.h"
 
 #define MAX_FILE_NAME_LEN 16   //最大文件名长度
-
-extern struct dir root_dir;   //根目录
 
 /*目录结构*/
 struct dir
@@ -24,8 +24,10 @@ struct dir_entry
     enum file_types f_type;   //文件类型
 };
 
+extern struct dir root_dir;   //根目录
+
 /*打开根目录*/
-void open_dir(struct partition* part);
+void open_root_dir(struct partition* part);
 /*在分区part上打开i节点为inode_no的目录并返回目录指针*/
 struct dir* dir_open(struct partition* part, uint32_t inode_no);
 /*在part分区内的pdir目录内寻找名为name的文件或目录，
