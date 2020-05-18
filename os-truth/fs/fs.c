@@ -317,10 +317,11 @@ int32_t sys_open(const char* pathname, uint8_t flags)
         return -1;
     }
 
-    switch(false & O_CREAT) {
+    switch(flags & O_CREAT) {
         case O_CREAT:
             printk("creating file\n");
             fd = file_create(searched_record.parent_dir, (strrchr(pathname, '/') + 1), flags);
+            printk("sys_open: fd = %d\n", fd);
             dir_close(searched_record.parent_dir);
         //其余为打开文件
     }
@@ -390,4 +391,5 @@ void filesys_init()
     while(fd_idx < MAX_FILE_OPEN) {
         file_table[fd_idx++].fd_inode = NULL;
     }
+    printk("filesys init done!!!!!!\n");
 }

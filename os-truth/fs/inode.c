@@ -35,7 +35,6 @@ static void inode_locate(struct partition* part, uint32_t inode_no, struct inode
     } else {
         inode_pos->two_sec = false;
     }
-
     inode_pos->sec_lba = inode_table_lba + off_sec;
     inode_pos->off_size = off_size_in_sec;
 }

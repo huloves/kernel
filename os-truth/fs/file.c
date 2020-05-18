@@ -77,7 +77,7 @@ void bitmap_sync(struct partition* part, uint32_t bit_idx, uint8_t btmp)
     uint32_t off_sec = bit_idx / 4096;   //本i节点索引相对于位图的扇区偏移量
     uint32_t off_size = off_sec * BLOCK_SIZE;   //本i节点索引相对于位图的字节偏移量
     uint32_t sec_lba;
-    uint8_t bitmap_off;
+    uint8_t* bitmap_off;
 
     //需要被同步到硬盘的位图只有inode_bitmap and block_bitmap
     switch(btmp) {
@@ -150,7 +150,11 @@ int32_t file_create(struct dir* parent_dir, char* filename, uint8_t flag)
     inode_sync(cur_part, parent_dir->inode, io_buf);
 
     memset(io_buf, 0, 1024);
-    //c 将inode_bitmap位图同步到硬盘
+    //c 将新创建的文件的i节点同步到硬盘
+    inode_sync(cur_part, new_file_inode, io_buf);
+
+    memset(io_buf, 0, 1024);
+    //d 将inode_bitmap位图同步到硬盘
     bitmap_sync(cur_part, inode_no, INODE_BITMAP);
 
     //e 将创建的文件i节点添加到open_inodes链表

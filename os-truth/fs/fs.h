@@ -14,9 +14,9 @@ extern struct partition* cur_part;   //默认情况下操作的是哪个分区
 /*文件类型*/
 enum file_types
 {
-    FT_UNKNOWN,   //不支持的文件类型
-    FT_REGULAR,   //普通文件
-    FT_DIRECTORY  //目录
+    FT_UNKNOWN,   //0 不支持的文件类型
+    FT_REGULAR,   //1 普通文件
+    FT_DIRECTORY  //2 目录
 };
 
 /*打开文件的选项*/
