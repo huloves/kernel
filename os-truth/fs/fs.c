@@ -324,9 +324,32 @@ int32_t sys_open(const char* pathname, uint8_t flags)
             printk("sys_open: fd = %d\n", fd);
             dir_close(searched_record.parent_dir);
         //其余为打开文件
+        default:
+            fd = file_open(inode_no, flags);
     }
 
     return fd;
+}
+
+/*将文件描述符转化为文件表的下标*/
+static uint32_t fd_local2global(uint32_t local_fd)
+{
+    struct task_struct* cur = running_thread();
+    int32_t global_fd = cur->fd_table[local_fd];
+    ASSERT(global_fd >=0 && global_fd < MAX_FILE_OPEN);
+    return (uint32_t)global_fd;
+}
+
+/*关闭文件描述符fd指向的文件，成功返回0，失败则返回-1*/
+int32_t sys_close(int32_t fd)
+{
+    int32_t ret = -1;   //返回值默认为-1，即失败
+    if(fd > 2) {
+        uint32_t _fd = fd_local2global(fd);
+        ret = file_close(&file_table[_fd]);
+        running_thread()->fd_table[fd] = -1;   //使该文件描述符可用
+    }
+    return ret;
 }
 
 /*在磁盘上搜索文件系统，若没有则格式化分区创建文件系统*/

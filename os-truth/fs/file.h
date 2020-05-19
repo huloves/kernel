@@ -45,5 +45,9 @@ int32_t block_bitmap_alloc(struct partition* part);
 void bitmap_sync(struct partition* part, uint32_t bit_idx, uint8_t btmp);
 /*创建文件，若成功则返回文件描述符，否则返回-1*/
 int32_t file_create(struct dir* parent_dir, char* filename, uint8_t flag);
+/*打开编号为inode_no的inode对应的文件，成功返回文件描述符，否则返回-1*/
+int32_t file_open(uint32_t inode_no, uint8_t flag);
+/*关闭文件*/
+int32_t file_close(struct file* file);
 
 #endif
