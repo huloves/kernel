@@ -40,6 +40,10 @@ struct path_search_record
 int32_t path_depth_cnt(char* pathname);
 /*打开或创建文件成功后，返回文件描述符，否则返回-1*/
 int32_t sys_open(const char* pathname, uint8_t flags);
+/*关闭文件描述符fd指向的文件，成功返回0，失败则返回-1*/
+int32_t sys_close(int32_t fd);
+/*将buf中连续count个字节写入文件描述符fd，成功则返回写入的字节数，失败返回-1*/
+int sys_write(int32_t fd, const void* buf, uint32_t count);
 /*在磁盘上搜索文件系统，若没有则格式化分区创建文件系统*/
 void filesys_init(void);
 

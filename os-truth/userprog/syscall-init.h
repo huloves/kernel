@@ -4,8 +4,6 @@
 
 /*返回当前任务的pid*/
 uint32_t sys_getpid(void);
-/*输出*/
-uint32_t sys_write(char* str); 
 /*初始化系统调用*/
 void syscall_init(void);
 

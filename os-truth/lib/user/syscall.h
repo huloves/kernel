@@ -11,7 +11,7 @@ enum SYSCALL_NR
 };
 
 uint32_t getpid(void);
-uint32_t write(char* str);
+uint32_t write(int32_t fd, const void* buf, uint32_t count);
 /*申请size字节大小的内存，并返回结果*/
 void* malloc(uint32_t size);
 /*释放ptr指向的内存*/
