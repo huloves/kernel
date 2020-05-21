@@ -455,9 +455,50 @@ int32_t file_read(struct file* file, void* buf, uint32_t count)
             indirect_block_table = file->fd_inode->i_sectors[12];
             ide_read(cur_part->my_disk, indirect_block_table, all_blocks + 12, 1);
         }
-    } else {
-        if(block_read_end_idx < 12) {
+    } else {   //要读入多个扇区的情况
+        if(block_read_end_idx < 12) {   //数据结束所在的块属于直接块
+            block_idx = block_read_start_idx;
+            while(block_idx < block_read_end_idx) {
+                all_blocks[block_idx] = file->fd_inode->i_sectors[block_idx];
+                block_idx++;
+            }
+        } else if(block_read_start_idx > 12 && block_read_end_idx >= 12) {
+            block_idx = block_read_start_idx;
+            while(block_idx < 12) {
+                all_blocks[block_idx] = file->fd_inode->i_sectors[block_idx];
+                block_idx++;
+            }
+            ASSERT(file->fd_inode->i_sectors[12] != 0);
 
+            indirect_block_table = file->fd_inode->i_sectors[12];
+            ide_read(cur_part->my_disk, indirect_block_table, all_blocks + 12, 1);
+        } else {
+            ASSERT(file->fd_inode->i_sectors[12] != 0);
+            indirect_block_table = file->fd_inode->i_sectors[12];
+            ide_read(cur_part->my_disk, indirect_block_table, all_blocks + 12, 1);
         }
     }
+
+    //用到的块地址已经收集到all_blocks中，下面开始读数据
+    uint32_t sec_idx, sec_lba, sec_off_bytes, sec_left_bytes, chunk_size;
+    uint32_t bytes_read = 0;
+    while(bytes_read < size) {
+        sec_idx = file->fd_pos / BLOCK_SIZE;   //数据所在扇区索引
+        sec_lba = all_blocks[sec_idx];   //数据所在的扇区地址
+        sec_off_bytes = file->fd_pos % BLOCK_SIZE;   //数据在所在扇区中的字节偏移量
+        sec_left_bytes = BLOCK_SIZE - sec_off_bytes;   //数据开始处到扇区结束的字节大小
+        chunk_size = size_left < sec_left_bytes ? size_left : sec_left_bytes;   //待读入的数据大小
+
+        memset(io_buf, 0, BLOCK_SIZE);   //不清空也可以
+        ide_read(cur_part->my_disk, sec_lba, io_buf, 1);
+        memcpy(buf_dst, io_buf + sec_off_bytes, chunk_size);
+
+        buf_dst += chunk_size;
+        file->fd_pos += chunk_size;
+        bytes_read += chunk_size;
+        size_left -= chunk_size;
+    }
+    sys_free(all_blocks);
+    sys_free(io_buf);
+    return bytes_read;
 }

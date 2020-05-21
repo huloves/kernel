@@ -51,5 +51,7 @@ int32_t file_open(uint32_t inode_no, uint8_t flag);
 int32_t file_close(struct file* file);
 /*把buf中的count个字节写入file，成功则返回写入的字节数，失败则返回-1*/
 int32_t file_write(struct file* file, const void* buf, uint32_t count);
+/*从文件file中读取count个字节写入buf，返回读出的字节数，若到文件尾则返回-1*/
+int32_t file_read(struct file* file, void* buf, uint32_t count);
 
 #endif
