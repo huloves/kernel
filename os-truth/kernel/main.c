@@ -40,13 +40,12 @@ int main(void) {
    read_bytes = sys_read(fd, buf, 6);
    printf("3_ read %d bytes:\n%s\n", read_bytes, buf);
 
-   printf("______ close file1 and reopen ______\n");
-   sys_close(fd);
-   fd = sys_open("/file1", O_RDWR);
+   printf("______ SEEK_SET 0 ______\n");
+   sys_lseek(fd, 0, SEEK_SET);
    memset(buf, 0, 64);
    read_bytes = sys_read(fd, buf, 24);
    printf("4_ read %d bytes:\n%s\n", read_bytes, buf);
-   
+
    sys_close(fd);
    while(1);
    return 0;

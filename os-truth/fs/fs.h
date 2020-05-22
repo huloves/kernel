@@ -28,6 +28,14 @@ enum oflags
     O_CREAT = 4 //100
 };
 
+/*文件读写位置偏移量*/
+enum whence
+{
+    SEEK_SET = 1,
+    SEEK_CUR,
+    SEEK_END
+};
+
 /*记录查找文件过程中已找到的上级路径，也就是查找文件过程中“走过的地方”*/
 struct path_search_record
 {
@@ -46,6 +54,8 @@ int32_t sys_close(int32_t fd);
 int sys_write(int32_t fd, const void* buf, uint32_t count);
 /*从文件描述符fd指向的文件中读取count个字节到buf，若成功返回读出字节数，到文件尾则返回-1*/
 int32_t sys_read(int32_t fd, void* buf, uint32_t count);
+/*重置用于文件读写操作的便宜指针。成功返回新的偏移量，失败返回-1*/
+int32_t sys_lseek(int32_t fd, int32_t offset, uint8_t whence);
 /*在磁盘上搜索文件系统，若没有则格式化分区创建文件系统*/
 void filesys_init(void);
 

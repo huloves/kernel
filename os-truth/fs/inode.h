@@ -27,5 +27,9 @@ struct inode* inode_open(struct partition* part, uint32_t inode_no);
 void inode_close(struct inode* inode);
 /*初始化new_indoe*/
 void inode_init(uint32_t inode_no, struct inode* new_inode);
+/*将硬盘分区part上的inode清空*/
+void inode_delete(struct partition* part, uint32_t inode_no, void* io_buf);
+/*回收inode的数据块和inode本身*/
+void inode_release(struct partition* part, uint32_t inode_no);
 
 #endif

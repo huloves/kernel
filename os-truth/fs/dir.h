@@ -39,5 +39,7 @@ void dir_close(struct dir* dir);
 void create_dir_entry(char* filename, uint32_t inode_no, uint8_t file_type, struct dir_entry* p_de);
 /*将目录项p_de写入父目录parent_dir中，io_but由主调函数提供*/
 bool sync_dir_entry(struct dir* parent_dir, struct dir_entry* p_de, void* io_buf);
+/*把分区part目录pdir中编号为inode_no的目录项删除*/
+bool delete_dir_entry(struct partition* part, struct dir* pdir, uint32_t inode_no, void* io_buf);
 
 #endif
