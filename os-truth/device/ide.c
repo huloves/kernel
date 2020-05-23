@@ -23,9 +23,9 @@
 #define reg_ctl(channel)        reg_alt_status(channel)
 
 /*reg_status寄存器的一些关键位*/
-#define BIT_ALT_STAT_BSY        0x80   //硬盘忙，勿扰
-#define BIT_ALT_STAT_DRDY       0x40   //驱动器准备好，等待命令
-#define BIT_ALT_STAT_DRQ        0x8    //数据传输准备好了，随时可以输出
+#define BIT_STAT_BSY        0x80   //硬盘忙，勿扰
+#define BIT_STAT_DRDY       0x40   //驱动器准备好，等待命令
+#define BIT_STAT_DRQ        0x8    //数据传输准备好了，随时可以输出
 
 /*device寄存器的一些关键位*/
 #define BIT_DEV_MBS     0xa0   //MBS位，第7,5位固定位1
@@ -141,9 +141,9 @@ static bool busy_wait(struct disk* hd)
 {
     struct ide_channel* channel = hd->my_channel;
     uint16_t time_limit = 30 * 1000;   //可以等待3000ms
-    while(time_limit -= 10 >= 0) {
-        if(!(inb(reg_status(channel)) & BIT_ALT_STAT_BSY)) {
-            return (inb(reg_status(channel)) & BIT_ALT_STAT_DRQ);   //DRQ位为1表示硬盘已经准备号数据了
+    while((time_limit -= 10) >= 0) {
+        if(!(inb(reg_status(channel)) & BIT_STAT_BSY)) {
+            return (inb(reg_status(channel)) & BIT_STAT_DRQ);   //DRQ位为1表示硬盘已经准备号数据了
         } else {
             mtime_sleep(10);
         }

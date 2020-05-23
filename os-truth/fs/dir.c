@@ -247,7 +247,7 @@ bool delete_dir_entry(struct partition* part, struct dir* pdir, uint32_t inode_n
                 } else if(strcmp((dir_e + dir_entry_idx)->i_no, ".") && strcmp((dir_e + dir_entry_idx)->filename, "..")) {
                     dir_entry_cnt++;   //统计此扇区内的目录项个数，用来判断删除目录项后是否回收该扇区
                     if((dir_e + dir_entry_idx)->i_no == inode_no) {
-                        ASSERT(dir_entry_found == NULL);   //确保目录中只有一个编号会inode_no的inode
+                        ASSERT(dir_entry_found == NULL);   //确保目录中只有一个编号是inode_no的inode
                         dir_entry_found = dir_e + dir_entry_idx;
                     }
                 }
@@ -272,14 +272,15 @@ bool delete_dir_entry(struct partition* part, struct dir* pdir, uint32_t inode_n
             //b 将块地址从数组i_sectors或索引表中去掉
             if(block_idx < 12) {
                 dir_inode->i_sectors[block_idx] = 0;
-            } else {
+            } else {   //在一级间接索引表中擦除该间接块地址
                 //先判断一级间索引表中间接块的数量，如果只有这一个间接块，连同简介索引表所在的块一同回收
-                uint32_t indirect_blocks = 0;
-                uint32_t indirect_block_idx = 12;
+                uint32_t indirect_blocks = 0;   //记录间接块个数
+                uint32_t indirect_block_idx = 12;   //间接块索引
                 while(indirect_block_idx < 140) {   //!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
                     if(all_blocks[indirect_block_idx] != 0) {
                         indirect_blocks++;
                     }
+                    indirect_block_idx++;
                 }
                 ASSERT(indirect_blocks >= 1);   //包括当前间接块
 
@@ -296,8 +297,9 @@ bool delete_dir_entry(struct partition* part, struct dir* pdir, uint32_t inode_n
                     dir_inode->i_sectors[12] = 0;
                 }
             }
-        } else {
+        } else {   //仅将该目录项清空
             memset(dir_entry_found, 0, dir_entry_size);
+            //!!!!!!清空目录项占用的数据
             ide_write(part->my_disk, all_blocks[block_idx], io_buf, 1);
         }
 

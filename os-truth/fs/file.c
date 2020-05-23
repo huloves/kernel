@@ -35,14 +35,14 @@ int32_t pcb_fd_install(int32_t global_fd_idx)
 {
     struct task_struct* cur = running_thread();
     uint8_t local_fd_idx = 3;
-    while(local_fd_idx < MAX_FILE_OPEN) {
+    while(local_fd_idx < MAX_FILES_OPEN_PER_PROC) {
         if(cur->fd_table[local_fd_idx] == -1) {   //-1表示free_slot，可用
             cur->fd_table[local_fd_idx] = global_fd_idx;
             break;
         }
         local_fd_idx++;
     }
-    if(local_fd_idx == MAX_FILE_OPEN) {
+    if(local_fd_idx == MAX_FILES_OPEN_PER_PROC) {
         printk("excees max open files_per_proc\n");
         return -1;
     }
@@ -72,7 +72,7 @@ int32_t block_bitmap_alloc(struct partition* part)
 }
 
 /*将内存中bitmap第bit_idx位所在的512字节同步到硬盘*/
-void bitmap_sync(struct partition* part, uint32_t bit_idx, uint8_t btmp)
+void bitmap_sync(struct partition* part, uint32_t bit_idx, uint8_t btmp_type)
 {
     uint32_t off_sec = bit_idx / 4096;   //本i节点索引相对于位图的扇区偏移量
     uint32_t off_size = off_sec * BLOCK_SIZE;   //本i节点索引相对于位图的字节偏移量
@@ -80,14 +80,14 @@ void bitmap_sync(struct partition* part, uint32_t bit_idx, uint8_t btmp)
     uint8_t* bitmap_off;
 
     //需要被同步到硬盘的位图只有inode_bitmap and block_bitmap
-    switch(btmp) {
+    switch(btmp_type) {
         case INODE_BITMAP:
             sec_lba = part->sb->inode_bitmap_lba + off_sec;
             bitmap_off = part->inode_bitmap.bits + off_size;
             break;
         case BLOCK_BITMAP:
             sec_lba = part->sb->block_bitmap_lba + off_sec;
-            bitmap_off = part->inode_bitmap.bits + off_size;
+            bitmap_off = part->block_bitmap.bits + off_size;
             break;
     }
     ide_write(part->my_disk, sec_lba, bitmap_off, 1);

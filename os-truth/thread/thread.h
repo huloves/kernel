@@ -5,7 +5,7 @@
 #include "bitmap.h"
 #include "memory.h"
 
-#define MAX_FILES_OPEN_PROC 8
+#define MAX_FILES_OPEN_PER_PROC 8
 
 /*自定义通用函数类型，它将在很多线程函数中作为参数类型*/
 typedef void thread_func(void*);
@@ -89,7 +89,7 @@ struct task_struct
 
     uint32_t elapsed_ticks;   //此任务自上cpu运行后至今占用了多少cpu滴答数，从运行开始到运行结束所经历的总时钟数
 
-    int32_t fd_table[MAX_FILES_OPEN_PROC];   //文件描述符数组
+    int32_t fd_table[MAX_FILES_OPEN_PER_PROC];   //文件描述符数组
 
     struct list_elem general_tag;   //的作用是用于线程在一般的队列中的节点，线程的标签
 

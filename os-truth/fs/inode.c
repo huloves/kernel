@@ -179,7 +179,7 @@ void inode_release(struct partition* part, uint32_t inode_no)
     uint32_t block_bitmap_idx;
     uint32_t all_blocks[140] = {0};   //12个直接块 + 128个间接块
 
-    //a 香江前12个直接块存入all_blocks
+    //a 先将前12个直接块存入all_blocks
     while(block_idx < 12) {
         all_blocks[block_idx] = inode_to_del->i_sectors[block_idx];
         block_idx++;
