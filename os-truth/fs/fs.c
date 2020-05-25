@@ -321,6 +321,7 @@ int32_t sys_open(const char* pathname, uint8_t flags)
     switch(flags & O_CREAT) {
         case O_CREAT:
             printk("creating file\n");
+            printk("!!!!!!sys_open create filename:%s\n", (strrchr(pathname, '/') + 1));
             fd = file_create(searched_record.parent_dir, (strrchr(pathname, '/') + 1), flags);
             printk("sys_open: fd = %d\n", fd);
             dir_close(searched_record.parent_dir);

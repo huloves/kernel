@@ -34,7 +34,7 @@ int main(void) {
    // printf("fd_ = %d\n", fd_);
    // sys_close(fd);
    // printf("/file6 delete %s!\n", sys_unlink("/file6") == 0 ? "done" : "fail");
-   printf("/dir1/subdir1 create %s!\n", sys_mkdir("/dir1/subdir1") == 0? "done" : "fail");
+   printf("/dir1/subdir1 create %s!\n", sys_mkdir("/dir1/subdir1") == 0 ? "done" : "fail");
    printf("/dir1 create %s!\n", sys_mkdir("/dir1") == 0 ? "done" : "fail");
    printf("now, /dir1/subdir1 create %s!\n", sys_mkdir("/dir1/subdir1") == 0 ? "done" : "fail");
    int fd = sys_open("/dir1/subdir1/file2", O_CREAT | O_RDWR);
