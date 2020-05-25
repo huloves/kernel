@@ -484,7 +484,7 @@ int32_t sys_mkdir(const char* pathname)
     memset(&searched_record, 0, sizeof(struct path_search_record));
     int inode_no = -1;
     inode_no = search_file(pathname, &searched_record);
-    if(inode_no == -1) {
+    if(inode_no != -1) {
         printk("sys_mkdir: file or dirctory %s exist!\n", pathname);
         rollback_step = 1;
         goto rollback;
@@ -503,7 +503,7 @@ int32_t sys_mkdir(const char* pathname)
     char* dirname = strrchr(searched_record.searched_path, '/') + 1;
     inode_no = inode_bitmap_alloc(cur_part);
     if(inode_no == -1) {
-        pritnk("sys_mkdir: allocate inode failed\n");
+        printk("sys_mkdir: allocate inode failed\n");
         rollback_step = 1;
         goto rollback;
     }

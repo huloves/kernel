@@ -58,6 +58,8 @@ int32_t sys_read(int32_t fd, void* buf, uint32_t count);
 int32_t sys_lseek(int32_t fd, int32_t offset, uint8_t whence);
 /*删除文件（非目录），成功返回0，失败返回-1*/
 int32_t sys_unlink(const char* pathname);
+/*创建目录pathname，成功返回0，失败返回-1*/
+int32_t sys_mkdir(const char* pathname);
 /*在磁盘上搜索文件系统，若没有则格式化分区创建文件系统*/
 void filesys_init(void);
 
