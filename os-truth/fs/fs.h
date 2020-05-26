@@ -60,6 +60,10 @@ int32_t sys_lseek(int32_t fd, int32_t offset, uint8_t whence);
 int32_t sys_unlink(const char* pathname);
 /*创建目录pathname，成功返回0，失败返回-1*/
 int32_t sys_mkdir(const char* pathname);
+/*目录打开成功后返回目录指针，失败返回NULL*/
+struct dir* sys_opendir(const char* name);
+/*成功关闭目录p_dir返回0，失败返回-1*/
+int32_t sys_closedir(struct dir* dir);
 /*在磁盘上搜索文件系统，若没有则格式化分区创建文件系统*/
 void filesys_init(void);
 
