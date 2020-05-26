@@ -64,6 +64,10 @@ int32_t sys_mkdir(const char* pathname);
 struct dir* sys_opendir(const char* name);
 /*成功关闭目录p_dir返回0，失败返回-1*/
 int32_t sys_closedir(struct dir* dir);
+/*读取目录dir的1个目录项，成功后返回其目录项地址，到目录尾时或出错时返回NULL*/
+struct dir_entry* sys_readdir(struct dir* dir);
+/*把目录dir的指针dir_pos置0*/
+void sys_rewinddir(struct dir* dir);
 /*在磁盘上搜索文件系统，若没有则格式化分区创建文件系统*/
 void filesys_init(void);
 
