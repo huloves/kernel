@@ -43,5 +43,9 @@ bool sync_dir_entry(struct dir* parent_dir, struct dir_entry* p_de, void* io_buf
 bool delete_dir_entry(struct partition* part, struct dir* pdir, uint32_t inode_no, void* io_buf);
 /*读取目录，成功返回1个目录项，失败返回NULL*/
 struct dir_entry* dir_read(struct dir* dir);
+/*判断目录是否为空*/
+bool dir_is_empty(struct dir* dir);
+/*在父目录parent_dir中删除child_dir*/
+int32_t dir_remove(struct dir* parent_dir, struct dir* child_dir);
 
 #endif

@@ -68,6 +68,8 @@ int32_t sys_closedir(struct dir* dir);
 struct dir_entry* sys_readdir(struct dir* dir);
 /*把目录dir的指针dir_pos置0*/
 void sys_rewinddir(struct dir* dir);
+/*删除空目录，成功时返回0，失败时返回-1*/
+int32_t sys_rmdir(const char* pathname);
 /*在磁盘上搜索文件系统，若没有则格式化分区创建文件系统*/
 void filesys_init(void);
 
