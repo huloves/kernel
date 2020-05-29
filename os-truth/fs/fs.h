@@ -70,6 +70,10 @@ struct dir_entry* sys_readdir(struct dir* dir);
 void sys_rewinddir(struct dir* dir);
 /*删除空目录，成功时返回0，失败时返回-1*/
 int32_t sys_rmdir(const char* pathname);
+/*把当前工作目录绝对路径写入buf，size是buf的大小。当buf为NULL时，由操作系统分配存储工作路径的空间并返回地址，失败返回NULL*/
+char* sys_getcwd(char* buf, uint32_t size);
+/*更改当前工作目录为绝对路径path，成功则返回0，失败则返回-1*/
+int32_t sys_chdir(const char* path);
 /*在磁盘上搜索文件系统，若没有则格式化分区创建文件系统*/
 void filesys_init(void);
 
