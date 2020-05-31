@@ -44,6 +44,14 @@ struct path_search_record
     enum file_types file_type;   //找到的是普通文件，还是目录，找不到将为未知类型
 };
 
+/*文件属性结构体*/
+struct stat
+{
+    uint32_t st_ino;   //inode编号
+    uint32_t st_size;   //尺寸
+    enum file_types st_filetype;   //文件尺寸
+};
+
 /*返回路径深度，比如/a/b/c，深度为3*/
 int32_t path_depth_cnt(char* pathname);
 /*打开或创建文件成功后，返回文件描述符，否则返回-1*/
