@@ -49,6 +49,8 @@ void* malloc_page(enum pool_flags pf, uint32_t pg_cnt);
 void* get_kernel_pages(uint32_t pg_cnt);
 void* get_user_pages(uint32_t pg_cnt);
 void* get_a_page(enum pool_flags pf, uint32_t vaddr);
+/*安装1页大小的vaddr，专门针对fork时虚拟地址位图无需操作的情况*/
+void* get_a_page_without_opvaddrbitmap(enum pool_flags pf, uint32_t vaddr);
 void mem_init(void);
 /*得到虚拟地址映射到的物理地址*/
 uint32_t addr_v2p(uint32_t vaddr);

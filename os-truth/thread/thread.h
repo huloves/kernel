@@ -99,10 +99,13 @@ struct task_struct
     struct virtual_addr userprog_vaddr;   //用户进程的虚拟地址
     struct mem_block_desc u_block_desc[DESC_CNT];   //用户进程内存块描述符表
     uint32_t cwd_inode_nr;   //进程所在的工作目录的inode编号
+    int16_t parent_pid;   //父进程的pid
     uint32_t stack_magic;   //栈的边界标记，用于检测栈的溢出
 };
 
 struct task_struct* running_thread(void);
+/*为进程分配pid*/
+pid_t fork_pid();
 void thread_create(struct task_struct* pthread, thread_func function, void* func_arg);
 void init_thread(struct task_struct* pthread, char* name, int prio);
 struct task_struct* thread_start(char* name, int prio, thread_func function, void* func_arg);
