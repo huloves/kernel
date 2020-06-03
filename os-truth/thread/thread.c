@@ -8,6 +8,7 @@
 #include "debug.h"
 #include "process.h"
 #include "sync.h"
+#include "print.h"
 
 #define PG_SIZE 4096
 
@@ -19,6 +20,7 @@ struct lock pid_lock;                  //分配pid锁
 static struct list_elem* thread_tag;   //用于保存队列中的线程节点
 
 extern void switch_to(struct task_struct* cur, struct task_struct* next);
+extern void init(void);
 
 /*系统空闲时运行的线程*/
 static void idle(void* arg_UNUSED)
@@ -229,6 +231,8 @@ void thread_init(void)
     list_init(&thread_ready_list);
     list_init(&thread_all_list);
     lock_init(&pid_lock);
+    //先创建第一个用户进程init
+    process_execute(init, "init");
     //将当前main函数创建为线程
     make_main_thread();
     //创建idle线程

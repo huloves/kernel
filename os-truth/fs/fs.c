@@ -12,6 +12,8 @@
 #include "memory.h"
 #include "file.h"
 #include "console.h"
+#include "keyboard.h"
+#include "ioqueue.h"
 
 struct partition* cur_part;   //默认情况下操作的是哪个分区
 
@@ -382,13 +384,24 @@ int sys_write(int32_t fd, const void* buf, uint32_t count)
 /*从文件描述符fd指向的文件中读取count个字节到buf，若成功返回读出字节数，到文件尾则返回-1*/
 int32_t sys_read(int32_t fd, void* buf, uint32_t count)
 {
-    if(fd < 0) {
-        printk("sys_read: fd error\n");
-        return -1;
-    }
     ASSERT(buf != NULL);
-    uint32_t _fd = fd_local2global(fd);
-    return file_read(&file_table[_fd], buf, count);
+    int32_t ret = -1;
+    if(fd < 0 || fd == stdout_no || fd == stderr_no) {
+        printk("sys_read: fd error\n");
+    } else if(fd == stdin_no) {
+        char* buffer = buf;
+        uint32_t bytes_read = 0;
+        while(bytes_read < count) {
+            *buffer = ioq_getchar(&kbd_buf);
+            bytes_read++;
+            buffer++;
+        }
+        ret = (bytes_read == 0 ? -1 : (int32_t)bytes_read);
+    } else {
+        uint32_t _fd = fd_local2global(fd);
+        ret = file_read(&file_table[_fd], buf, count);
+    }
+    return ret;
 }
 
 /*重置用于文件读写操作的便宜指针。成功返回新的偏移量，失败返回-1*/
