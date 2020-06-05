@@ -10,7 +10,9 @@ enum SYSCALL_NR
     SYS_MALLOC,
     SYS_FREE,
     SYS_FORK,
-    SYS_READ
+    SYS_READ,
+    SYS_PUTCHAR,
+    SYS_CLEAR
 };
 
 uint32_t getpid(void);
@@ -20,5 +22,8 @@ void* malloc(uint32_t size);
 /*释放ptr指向的内存*/
 void free(void* ptr);
 pid_t fork(void);
+int32_t read(int32_t fd, void* buf, uint32_t count);
+void putchar(char char_asci);
+void clear(void);
 
 #endif

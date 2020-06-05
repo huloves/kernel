@@ -7,7 +7,8 @@
                 "/home/huloves/kernel/os-truth/kernel",
                 "/home/huloves/kernel/os-truth/lib/user",
                 "/home/huloves/kernel/os-truth/lib/",
-                "/home/huloves/kernel/os-truth/fs"
+                "/home/huloves/kernel/os-truth/fs",
+                "/home/huloves/kernel/os-truth/shell"
             ],
             "defines": [],
             "compilerPath": "/usr/bin/gcc",

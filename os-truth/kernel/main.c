@@ -11,6 +11,7 @@
 #include "fs.h"
 #include "string.h"
 #include "dir.h"
+#include "shell.h"
 
 void k_thread_a(void*);
 void k_thread_b(void*);
@@ -21,12 +22,14 @@ void init(void);
 int main(void) {
    put_str("I am kernel\n");
    init_all();
-   intr_enable();
+   cls_screen();
+   console_put_str("huloves@huloves:/ $" );
+   //intr_enable();
    
-   process_execute(u_prog_a, "u_prog_a");
+   //process_execute(u_prog_a, "u_prog_a");
    //process_execute(u_prog_b, "u_prog_b");
    //thread_start("k_thread_a", 31, k_thread_a, "I am thread_a");
-   thread_start("k_thread_b", 31, k_thread_b, "I am thread_b");
+   //thread_start("k_thread_b", 31, k_thread_b, "I am thread_b");
    while(1);
    return 0;
 }
@@ -35,11 +38,11 @@ void init(void)
 {
    uint32_t ret_pid = fork();
    if(ret_pid) {
-      printf("i am father, my pid is %d, child pid is %d\n", getpid(), ret_pid);
+      while(1);
    } else {
-      printf("i am child, my pid is %d, ret pid is %d\n", getpid(), ret_pid);
+      my_shell();
    }
-   while(1);
+   //panic("init: should not be here");
 }
 
 /* 在线程中运行的函数 */
