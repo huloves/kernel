@@ -23,7 +23,7 @@ int main(void) {
    put_str("I am kernel\n");
    init_all();
    cls_screen();
-   console_put_str("huloves@huloves:/ $" );
+   console_put_str("huloves@huloves:~/ $" );
    //intr_enable();
    
    //process_execute(u_prog_a, "u_prog_a");

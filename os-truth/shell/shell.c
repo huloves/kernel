@@ -57,7 +57,7 @@ void my_shell(void)
     cwd_cache[0] = '/';
     while(1) {
         print_prompt();
-        memset(cwd_cache, 0, cmd_len);
+        memset(cmd_line, 0, cmd_len);
         readline(cmd_line, cmd_len);
         if(cmd_line[0] == 0) {
             continue;

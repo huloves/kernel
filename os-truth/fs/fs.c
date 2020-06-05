@@ -826,6 +826,12 @@ int32_t sys_stat(const char* path, struct stat* buf)
     return ret;
 }
 
+/*向屏幕输出一个字符*/
+void sys_putchar(char char_asci)
+{
+    return console_put_char(char_asci);
+}
+
 /*在磁盘上搜索文件系统，若没有则格式化分区创建文件系统*/
 void filesys_init()
 {

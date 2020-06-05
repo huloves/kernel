@@ -82,6 +82,8 @@ int32_t sys_rmdir(const char* pathname);
 char* sys_getcwd(char* buf, uint32_t size);
 /*更改当前工作目录为绝对路径path，成功则返回0，失败则返回-1*/
 int32_t sys_chdir(const char* path);
+/*向屏幕输出一个字符*/
+void sys_putchar(char char_asci);
 /*在磁盘上搜索文件系统，若没有则格式化分区创建文件系统*/
 void filesys_init(void);
 
