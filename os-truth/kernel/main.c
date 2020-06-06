@@ -24,7 +24,6 @@ int main(void) {
    init_all();
    cls_screen();
    console_put_str("huloves@huloves:~/ $" );
-   //intr_enable();
    
    //process_execute(u_prog_a, "u_prog_a");
    //process_execute(u_prog_b, "u_prog_b");

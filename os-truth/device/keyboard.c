@@ -172,6 +172,10 @@ static void intr_keyboard_handler(void)
         char cur_char = keymap[index][shift];
         //只处理ascii码不为0的键
         if(cur_char) {
+            //处理ctrl+l和ctrl+u
+            if((ctrl_down_last && cur_char == 'l') || (ctrl_down_last && cur_char == 'u')) {
+                cur_char -= 'a';
+            }
             //若kbd_buf中未满且待加入的cur_char不为0，则将其加入到缓冲区kbd_buf中
             if(!ioq_full(&kbd_buf)) {
                 //put_char(cur_char);   //临时
