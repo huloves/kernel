@@ -105,7 +105,7 @@ static int32_t cmd_parse(char* cmd_str, char** argv, char token)
             *next++ = 0;
         }
 
-        //避免argv数组访问y越界，参数过多则返回-1
+        //避免argv数组访问越界，参数过多则返回-1
         if(argc > MAX_ARG_NR) {
             return -1;
         }

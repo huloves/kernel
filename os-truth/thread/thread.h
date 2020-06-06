@@ -114,6 +114,8 @@ void thread_block(enum task_status stat);
 void thread_unblock(struct task_struct* pthread);
 /*主动让出cpu，换其他线程运行*/
 void thread_yield(void);
+/*打印任务列表*/
+void sys_ps(void);
 void thread_init(void);
 
 #endif
