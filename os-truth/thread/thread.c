@@ -287,7 +287,7 @@ static bool elem2thread_info(struct list_elem* pelem, int arg UNUSED)
     memset(out_pad, 0, 16);
     ASSERT(strlen(pthread->name) < 17);
     memcpy(out_pad, pthread->name, strlen(pthread->name));
-    strcat(out_pad, '\n');
+    strcat(out_pad, "\n");
     sys_write(stdout_no, out_pad, strlen(out_pad));
     return false;   //迎合主调函数list_traversal
 }
@@ -295,7 +295,7 @@ static bool elem2thread_info(struct list_elem* pelem, int arg UNUSED)
 /*打印任务列表*/
 void sys_ps(void)
 {
-    char* ps_title = "PID      PPID      STAT      TICKS      COMMAND\n";
+    char* ps_title = "PID            PPID           STAT           TICKS           COMMAND\n";
     sys_write(stdout_no, ps_title, strlen(ps_title));
     list_traversal(&thread_all_list, elem2thread_info, 0);
 }
