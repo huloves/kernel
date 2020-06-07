@@ -171,7 +171,7 @@ static void partition_format(struct partition* part)
 
 /*将最上层路径名称解析出来，name_store用于存储最上层路径名
 功能：将最上层路径名称解析出来存储到name_store中，调用结束后返回除顶层路径之外的子路径字符串地址*/
-static char* path_parse(char* pathname, char* name_store)
+char* path_parse(char* pathname, char* name_store)
 {
     if(pathname[0] == '/') {
         while(*(++pathname) == '/');   //路径中出现1个或多个连续的字符'/'跳过，如"///a/b"

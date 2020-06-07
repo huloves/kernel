@@ -64,6 +64,8 @@ struct dir_entry* readdir(struct dir* dir);
 void rewinddir(struct dir* dir);
 /*获取path属性到buf中*/
 int32_t stat(const char* path, struct stat* buf);
+/*改变工作目录*/
+int32_t chdir(const char* path);
 /*显示任务列表*/
 void ps(void);
 

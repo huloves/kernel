@@ -161,6 +161,12 @@ int32_t stat(const char* path, struct stat* buf)
     return _syscall2(SYS_STAT, path, buf);
 }
 
+/*改变工作目录*/
+int32_t chdir(const char* path)
+{
+    return _syscall1(SYS_CHDIR, path);
+}
+
 /*显示任务列表*/
 void ps(void)
 {

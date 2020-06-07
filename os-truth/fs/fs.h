@@ -52,6 +52,9 @@ struct stat
     enum file_types st_filetype;   //文件尺寸
 };
 
+/*将最上层路径名称解析出来，name_store用于存储最上层路径名
+功能：将最上层路径名称解析出来存储到name_store中，调用结束后返回除顶层路径之外的子路径字符串地址*/
+char* path_parse(char* pathname, char* name_store);
 /*返回路径深度，比如/a/b/c，深度为3*/
 int32_t path_depth_cnt(char* pathname);
 /*打开或创建文件成功后，返回文件描述符，否则返回-1*/
