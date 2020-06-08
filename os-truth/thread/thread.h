@@ -6,6 +6,7 @@
 #include "memory.h"
 
 #define MAX_FILES_OPEN_PER_PROC 8
+#define TASK_NAME_LEN 16
 
 /*自定义通用函数类型，它将在很多线程函数中作为参数类型*/
 typedef void thread_func(void*);
