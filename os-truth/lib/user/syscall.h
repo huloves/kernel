@@ -27,7 +27,8 @@ enum SYSCALL_NR
     SYS_READDIR,
     SYS_REWINDIR,
     SYS_STAT,
-    SYS_PS
+    SYS_PS,
+    SYS_EXECV
 };
 
 uint32_t getpid(void);
@@ -68,5 +69,7 @@ int32_t stat(const char* path, struct stat* buf);
 int32_t chdir(const char* path);
 /*显示任务列表*/
 void ps(void);
+/*execv*/
+int execv(const char* path, const char* argv[]);
 
 #endif

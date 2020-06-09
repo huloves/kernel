@@ -132,7 +132,7 @@ void my_shell(void)
             continue;
         }
         argc = -1;
-        argc = cmd_parse(cmd_line, argv, ' ');
+        argc = cmd_parse(cmd_line, argv, ' ');   //记录输入参数的个数，和参数，参数存储在argv
         if(argc == -1) {
             printf("num of arguments exceed %d\n", MAX_ARG_NR);
             continue;
@@ -157,8 +157,28 @@ void my_shell(void)
             buildin_rmdir(argc, argv);
         } else if(!strcmp("rm", argv[0])) {
             buildin_rm(argc, argv);
-        } else {
-            printf("external command\n");
+        } else {   //如果是外部命令
+            int32_t pid = fork();
+            if(pid) {
+                while(1);
+            } else {
+                make_clear_abs_path(argv[0], final_path);
+                argv[0] = final_path;
+                //先判断文件是否存在
+                struct stat file_stat;
+                memset(&file_stat, 0, sizeof(struct stat));
+                if(stat(argv[0], &file_stat) == -1) {
+                    printf("my_shell: cannot access %s: No such file or directory\n", argv[0]);
+                } else {
+                    execv(argv[0], argv);
+                }
+                while(1);
+            }
+        }
+        int32_t arg_idx = 0;
+        while(arg_idx < MAX_ARG_NR) {
+            argv[arg_idx] = NULL;
+            arg_idx++;
         }
     }
     panic("my_shell: should not be here");
