@@ -152,7 +152,7 @@ struct dir_entry* readdir(struct dir* dir)
 /*回归目录指针*/
 void rewinddir(struct dir* dir)
 {
-    _syscall1(SYS_REWINDIR, dir);
+    _syscall1(SYS_REWINDDIR, dir);
 }
 
 /*获取path属性到buf中*/

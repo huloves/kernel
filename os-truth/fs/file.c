@@ -415,6 +415,8 @@ int32_t file_write(struct file* file, const void* buf, uint32_t count)
 /*从文件file中读取count个字节写入buf，返回读出的字节数，若到文件尾则返回-1*/
 int32_t file_read(struct file* file, void* buf, uint32_t count)
 {
+    // printk("count=%d\n", count);
+    // printk("buf=%x\n", buf);
     uint8_t* buf_dst = (uint8_t*)buf;
     uint32_t size = count, size_left = size;
 
@@ -431,11 +433,13 @@ int32_t file_read(struct file* file, void* buf, uint32_t count)
     if(io_buf == NULL) {
         printk("file_read: sys_malloc for io_buf failed\n");
     }
+    // printk("io_buf_start:%x\n", io_buf);
     uint32_t* all_blocks = (uint32_t*)sys_malloc(BLOCK_SIZE + 48);   //用来记录文件所有的块地址
     if(all_blocks == NULL) {
         printk("file_read: sys_malloc for all_blocks failed\n");
         return -1;
     }
+    // printk("all_blocks_start:%x", all_blocks);
 
     uint32_t block_read_start_idx = file->fd_pos / BLOCK_SIZE;   //数据所在块的起始地址
     uint32_t block_read_end_idx = (file->fd_pos + size) / BLOCK_SIZE;   //数据所在块的终止地址

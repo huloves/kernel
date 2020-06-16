@@ -1,5 +1,3 @@
-###### 此脚本在command目录下执行 ######
-
 if [[ ! -d "../lib" || ! -d "../build" ]];then
     echo "dependent dir don\'t exist"
     cwd=$(pwd)
@@ -11,22 +9,20 @@ if [[ ! -d "../lib" || ! -d "../build" ]];then
     exit
 fi
 
-BIN="prog_arg"
+BIN="prog_no_arg"
 CFLAGS="-m32 -Wall -c -fno-builtin -fno-stack-protector -W -Wstrict-prototypes \
 		 -Wmissing-prototypes -Wsystem-headers"
-LIB="-I ../lib -I ../lib/user -I ../fs"
+LIB="../lib/"
 OBJS="../build/string.o ../build/syscall.o \
-      ../build/stdio.o ../build/assert.o start.o"
+      ../build/stdio.o ../build/assert.o"
 DD_IN=$BIN
 DD_OUT="/home/huloves/bochs-2.6.11/hd60M.img"
 
-nasm -f elf ./start.s -o ./start.o
-ar rcs simple_crt.a $OBJS start.o
 gcc $CFLAGS -I $LIB -o $BIN".o" $BIN".c"
-ld -m elf_i386 $BIN".o" simple_crt.a -o $BIN
+ld -m elf_i386 -e main $BIN".o" $OBJS -o $BIN
 SET_CNT=$(ls -l $BIN|awk '{printf("%d", ($5+511)/512)}')
 
 if [[ -f $BIN ]];then
     dd if=./$DD_IN of=$DD_OUT bs=512 \
-    count=20 seek=300 conv=notrunc
+    count=$SET_CNT seek=300 conv=notrunc
 fi

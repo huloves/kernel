@@ -43,7 +43,7 @@ void syscall_init(void)
     syscall_table[SYS_CHDIR] = sys_chdir;
     syscall_table[SYS_MKDIR] = sys_mkdir;
     syscall_table[SYS_READDIR] = sys_readdir;
-    syscall_table[SYS_REWINDIR] = sys_rewinddir;
+    syscall_table[SYS_REWINDDIR] = sys_rewinddir;
     syscall_table[SYS_STAT] = sys_stat;
     syscall_table[SYS_PS] = sys_ps;
     syscall_table[SYS_EXECV] = sys_execv;

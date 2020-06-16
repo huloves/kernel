@@ -128,6 +128,8 @@ void my_shell(void)
         memset(final_path, 0, MAX_PATH_LEN);
         memset(cmd_line, 0, MAX_PATH_LEN);
         readline(cmd_line, MAX_PATH_LEN);
+        // strcpy(cmd_line, "./prog_no_arg");
+        // printf("!!!!!!\n");
         if(cmd_line[0] == 0) {
             continue;
         }
