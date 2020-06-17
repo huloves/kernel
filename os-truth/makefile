@@ -69,7 +69,8 @@ $(BUILD_DIR)/memory.o: kernel/memory.c kernel/memory.h lib/stdint.h  lib/kernel/
 
 $(BUILD_DIR)/thread.o: thread/thread.c thread/thread.h \
 					lib/stdint.h lib/string.h kernel/global.h lib/kernel/bitmap.h \
-					kernel/memory.h lib/kernel/print.h kernel/interrupt.h kernel/debug.h lib/kernel/list.h lib/kernel/print.h
+					kernel/memory.h lib/kernel/print.h kernel/interrupt.h kernel/debug.h lib/kernel/list.h lib/kernel/print.h \
+					lib/kernel/bitmap.h
 	$(CC) $(CFLAGS) $< -o $@
 
 $(BUILD_DIR)/list.o: lib/kernel/list.c lib/kernel/list.h \

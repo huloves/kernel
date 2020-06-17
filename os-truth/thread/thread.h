@@ -100,11 +100,18 @@ struct task_struct
     struct virtual_addr userprog_vaddr;   //用户进程的虚拟地址
     struct mem_block_desc u_block_desc[DESC_CNT];   //用户进程内存块描述符表
     uint32_t cwd_inode_nr;   //进程所在的工作目录的inode编号
-    int16_t parent_pid;   //父进程的pid
+    pid_t parent_pid;   //父进程的pid
+    int8_t exit_status;   //进程结束时自己调用exit传出的参数
     uint32_t stack_magic;   //栈的边界标记，用于检测栈的溢出
 };
 
 struct task_struct* running_thread(void);
+/*释放pid*/
+void release_pid(pid_t pid);
+/*回收thread_over的pcb和页表，并将其从调度队列中去除*/
+void thread_exit(struct task_struct* thread_over, bool need_schedule);
+/*根据pid找pcb，若找到则返回pcb，否则返回NULL*/
+struct task_struct* pid2thread(int32_t pid);
 /*为进程分配pid*/
 pid_t fork_pid();
 void thread_create(struct task_struct* pthread, thread_func function, void* func_arg);

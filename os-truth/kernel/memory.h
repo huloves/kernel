@@ -62,5 +62,7 @@ void pfree(uint32_t pg_phy_addr);
 void mfree_page(enum pool_flags pf, void* _vaddr, uint32_t pg_cnt);
 /*回收内存ptr*/
 void sys_free(void* ptr);
+/*根据物理页框地址pg_phy_addr在相应的内存池的位图清零，不改动页表*/
+void free_a_phy_addr(uint32_t pg_phy_addr);
 
 #endif
