@@ -69,7 +69,7 @@ bool elem_find(struct list* plist, struct list_elem* obj_elem)
 }
 
 /*把列表plist中的每个元素elem和arg传给回调函数func，arg给func用来判断elem是否符合条件*/
-struct list_elem* list_traversal(struct list* plist,function func, int arg)
+struct list_elem* list_traversal(struct list* plist, function func, int arg)
 {
     struct list_elem* elem = plist->head.next;
     //如果队列为空
