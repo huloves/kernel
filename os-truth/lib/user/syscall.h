@@ -28,7 +28,9 @@ enum SYSCALL_NR
     SYS_REWINDDIR,
     SYS_STAT,
     SYS_PS,
-    SYS_EXECV
+    SYS_EXECV,
+    SYS_WAIT,
+    SYS_EXIT
 };
 
 uint32_t getpid(void);
@@ -71,5 +73,7 @@ int32_t chdir(const char* path);
 void ps(void);
 /*execv*/
 int execv(const char* path, const char* argv[]);
+pid_t wait(int32_t* status);
+void exit(int32_t status);
 
 #endif

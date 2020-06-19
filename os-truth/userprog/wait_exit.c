@@ -2,6 +2,8 @@
 #include "stdint.h"
 #include "thread.h"
 #include "fs.h"
+#include "list.h"
+#include "debug.h"
 
 /*释放用户进程资源，页表中对应的物理页，虚拟内存池占物理页框，打开的文件*/
 static void release_prog_resource(struct task_struct* release_thread)
@@ -54,4 +56,89 @@ static void release_prog_resource(struct task_struct* release_thread)
         }
         fd_idx++;
     }
+}
+
+/*list_traversal的回调函数，查找pelem的parent_pid是否是ppid，成功返回true，失败返回false*/
+static bool find_child(struct list_elem* pelem, int32_t ppid)
+{
+    struct task_struct* pthread = elem2entry(struct task_struct, all_list_tag, pelem);
+    if(pthread->parent_pid == ppid) {
+        return true;
+    }
+    return false;
+}
+
+/*list_traversal的回调函数，查找状态为TASK_HANGING的任务*/
+static bool find_hanging_child(struct list_elem* pelem, int32_t ppid)
+{
+    struct task_struct* pthread = elem2entry(struct task_struct, all_list_tag, pelem);
+    if(pthread->parent_pid == ppid && pthread->status == TASK_HANGING) {
+        return true;
+    }
+    return false;
+}
+
+/*回调函数，将一个子进程过继给init*/
+static bool init_adopt_a_child(struct list_elem* pelem, int32_t pid)
+{
+    struct task_struct* pthread = elem2entry(struct task_struct, all_list_tag, pelem);
+    if(pthread->parent_pid == pid) {   //若该进程的parent_pid为pid，返回
+        pthread->parent_pid = 1;
+    }
+    return false;   //遍历下一个元素
+}
+
+/*等待子进程调用exit，将子进程的退出状态保存到status指向的变量，成功返回子进程的pid，失败返回-1*/
+pid_t sys_wait(int32_t* status)
+{
+    struct task_struct* parent_thread = running_thread();
+    while(1) {
+        //优先处理已经是挂起状态的任务
+        struct list_elem* child_elem = list_traversal(&thread_all_list, find_hanging_child, parent_thread->pid);
+        if(child_elem != NULL) {
+            struct task_struct* child_thread = elem2entry(struct task_struct, all_list_tag, child_elem);
+            *status = child_thread->exit_status;
+
+            //thread_exit之后，pcb会被回收，因此提前获取pid
+            uint16_t child_pid = child_thread->pid;
+
+            // 从就绪队列和全部任务队列中删除进程表项
+            thread_exit(child_thread, false);   //传入false，使thread_exit调用后回到此处
+
+            return child_pid;
+        }
+
+        //判断是否有子进程
+        child_elem = list_traversal(&thread_all_list, find_child, parent_thread->pid);
+        if(child_elem == NULL) {
+            return -1;
+        } else {   //若子进程还未运行完成，即未调用exit，则将自己挂起，知道子进程在执行exit时将自己唤醒
+            thread_block(TASK_WAITING);
+        }
+    }
+}
+
+/*子进程用来结束自己时调用*/
+void sys_exit(int32_t status)
+{
+    struct task_struct* child_thread = running_thread();
+    child_thread->exit_status = status;
+    if(child_thread->parent_pid == -1) {
+        PANIC("sys_exit: child_thread->parent_pid is -1\n");
+    }
+    
+    //将进程child_thread的所有子进程都过继给init
+    list_traversal(&thread_all_list, init_adopt_a_child, child_thread->pid);
+
+    //回收进程child_thread的资源
+    release_prog_resource(child_thread);
+
+    //如果父进程正在等待子进程退出，将父进程唤醒
+    struct task_struct* parent_thread = pid2thread(child_thread->parent_pid);
+    if(parent_thread->status == TASK_WAITING) {
+        thread_unblock(parent_thread);
+    }
+
+    //将自己挂起，等待父进程收获其status，并回收pcb
+    thread_block(TASK_HANGING);
 }
