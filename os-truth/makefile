@@ -187,6 +187,11 @@ $(BUILD_DIR)/wait_exit.o: userprog/wait_exit.c userprog/wait_exit.h \
 					lib/kernel/list.h kernel/debug.h
 	$(CC) $(CFLAGS) $< -o $@
 
+$(BUILD_DIR)/pipe.o: shell/pipe.c shell/pipe.h \
+					lib/stdint.h fs/fs.h kernel/global.h \
+					fs/file.h kernel/memory.h device/ioqueue.h
+	$(CC) $(CFLAGS) $< -o $@
+
 ###### 汇编代码编译 ######
 $(BUILD_DIR)/kernel.o: kernel/kernel.s
 	$(AS) $(ASFLAGS) $< -o $@

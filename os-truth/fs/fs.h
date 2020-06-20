@@ -91,5 +91,7 @@ int32_t sys_stat(const char* path, struct stat* buf);
 void sys_putchar(char char_asci);
 /*在磁盘上搜索文件系统，若没有则格式化分区创建文件系统*/
 void filesys_init(void);
+/*将文件描述符转化为文件表的下标*/
+uint32_t fd_local2global(uint32_t local_fd);
 
 #endif

@@ -32,12 +32,12 @@ static int32_t copy_pcb_vaddrbitmap_stack0(struct task_struct* child_thread, str
     memcpy(vaddr_bitmap, child_thread->userprog_vaddr.vaddr_bitmap.bits, bitmap_pg_cnt * PG_SIZE);
     child_thread->userprog_vaddr.vaddr_bitmap.bits = vaddr_bitmap;
     //调试用
-    ASSERT(strlen(child_thread->name) <11);
+    ASSERT(strlen(child_thread->name) < 11);
     strcat(child_thread->name, "_fork");
     return 0;
 }
 
-/*复制子进程的进程体（到吗和数据）及用户栈
+/*复制子进程的进程体（代码和数据）及用户栈
   buf_page必须是内核页，要用它作为所有进程的数据缓冲区
   此函数的主要功能就是拷贝进程的代码和数据资源，也就是复制一份进程体*/
 static void copy_body_stack3(struct task_struct* child_thread, struct task_struct* parent_thread, void* buf_page)
@@ -97,7 +97,7 @@ static int32_t build_child_stack(struct task_struct* child_thread)
     //switch_to的返回地址更新为intr_exit，直接从中断返回
     *ret_addr_in_thread_stack = (uint32_t)intr_exit;
 
-    //下面这两行知识为了使构建的thread_stack更加清晰，其实不需要，因为在进入intr_exit后一系列的pop会把寄存器中的数据覆盖
+    //下面这两行只是为了使构建的thread_stack更加清晰，其实不需要，因为在进入intr_exit后一系列的pop会把寄存器中的数据覆盖
     *ebp_ptr_in_thread_stack = *ebx_ptr_in_thread_stack = *edi_ptr_in_thread_stack = *esi_ptr_in_thread_stack = 0;
 
     //把构建的thread_stack的栈顶作为switch_to恢复数据时的栈顶
