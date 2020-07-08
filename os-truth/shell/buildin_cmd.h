@@ -20,5 +20,6 @@ int32_t buildin_mkdir(uint32_t argc, char** argv);
 int32_t buildin_rmdir(uint32_t argc, char** argv);
 /*rm命令内建函数*/
 int32_t buildin_rm(uint32_t argc, char** argv);
+void buildin_help(int32_t argc, char** argv);
 
 #endif

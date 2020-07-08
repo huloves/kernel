@@ -854,6 +854,21 @@ void sys_putchar(char char_asci)
     return console_put_char(char_asci);
 }
 
+void sys_help(void)
+{
+    printk("\
+    buildin commands:\n\
+    ls: show directory or file information\n\
+    cd: change current work directory\n\
+    rm: remove a empty directory\n\
+    pwd: show current work directory\n\
+    ps: show process indormation\n\
+    clear: clear creen\n\
+    shortcut key: \n\
+    ctrl+l: clear screen\n\
+    ctrl+u: clear input\n\n");
+}
+
 /*在磁盘上搜索文件系统，若没有则格式化分区创建文件系统*/
 void filesys_init()
 {

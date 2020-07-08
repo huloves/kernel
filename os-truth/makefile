@@ -27,7 +27,8 @@ OBJS = $(BUILD_DIR)/main.o $(BUILD_DIR)/init.o $(BUILD_DIR)/interrupt.o \
 	   $(BUILD_DIR)/stdio.o $(BUILD_DIR)/ide.o $(BUILD_DIR)/stdio-kernel.o $(BUILD_DIR)/fs.o \
 	   $(BUILD_DIR)/inode.o $(BUILD_DIR)/file.o $(BUILD_DIR)/dir.o \
 	   $(BUILD_DIR)/fork.o $(BUILD_DIR)/assert.o $(BUILD_DIR)/shell.o \
-	   $(BUILD_DIR)/buildin_cmd.o $(BUILD_DIR)/exec.o $(BUILD_DIR)/wait_exit.o
+	   $(BUILD_DIR)/buildin_cmd.o $(BUILD_DIR)/exec.o $(BUILD_DIR)/wait_exit.o \
+	   $(BUILD_DIR)/pipe.o
 
 ###### c代码编译 ######
 $(BUILD_DIR)/main.o: kernel/main.c lib/kernel/print.h \
@@ -160,7 +161,7 @@ $(BUILD_DIR)/fork.o: userprog/fork.c userprog/fork.h \
 					lib/stdint.h thread/thread.h lib/string.h \
 					kernel/global.h kernel/memory.h userprog/process.h \
 					kernel/debug.h fs/file.h kernel/interrupt.h \
-					lib/kernel/list.h
+					lib/kernel/list.h shell/pipe.h
 	$(CC) $(CFLAGS) $< -o $@
 
 $(BUILD_DIR)/assert.o: lib/user/assert.c lib/user/assert.h lib/stdio.h
@@ -182,14 +183,16 @@ $(BUILD_DIR)/exec.o: userprog/exec.c userprog/exec.h \
 					fs/fs.h lib/string.h thread/thread.h kernel/interrupt.h
 	$(CC) $(CFLAGS) $< -o $@
 
-$(BUILD_DIR)/wait_exit.o: userprog/wait_exit.c userprog/wait_exit.h \
-					lib/stdint.h thread/thread.h fs/fs.h \
-					lib/kernel/list.h kernel/debug.h
-	$(CC) $(CFLAGS) $< -o $@
-
 $(BUILD_DIR)/pipe.o: shell/pipe.c shell/pipe.h \
 					lib/stdint.h fs/fs.h kernel/global.h \
 					fs/file.h kernel/memory.h device/ioqueue.h
+	$(CC) $(CFLAGS) $< -o $@
+
+
+$(BUILD_DIR)/wait_exit.o: userprog/wait_exit.c userprog/wait_exit.h \
+					lib/stdint.h thread/thread.h fs/fs.h \
+					lib/kernel/list.h kernel/debug.h \
+					fs/file.h shell/pipe.h
 	$(CC) $(CFLAGS) $< -o $@
 
 ###### 汇编代码编译 ######

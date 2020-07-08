@@ -274,3 +274,13 @@ int32_t buildin_rm(uint32_t argc, char** argv)
     }
     return ret;
 }
+
+void buildin_help(int32_t argc, char** argv)
+{
+    int32_t ret = -1;
+    if(argc != 1) {
+        printf("help: just one argument!\n");
+    } else {
+        help();
+    }
+}

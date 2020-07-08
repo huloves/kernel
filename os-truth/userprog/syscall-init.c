@@ -50,5 +50,6 @@ void syscall_init(void)
     syscall_table[SYS_EXECV] = sys_execv;
     syscall_table[SYS_WAIT] = sys_wait;
     syscall_table[SYS_EXIT] = sys_exit;
+    syscall_table[SYS_HELP] = sys_help;
     put_str("syscall_init done\n");
 }

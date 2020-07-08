@@ -30,7 +30,8 @@ enum SYSCALL_NR
     SYS_PS,
     SYS_EXECV,
     SYS_WAIT,
-    SYS_EXIT
+    SYS_EXIT,
+    SYS_HELP
 };
 
 uint32_t getpid(void);
@@ -75,5 +76,6 @@ void ps(void);
 int execv(const char* path, const char* argv[]);
 pid_t wait(int32_t* status);
 void exit(int32_t status);
+void help(void);
 
 #endif

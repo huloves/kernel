@@ -89,6 +89,7 @@ int32_t sys_chdir(const char* path);
 int32_t sys_stat(const char* path, struct stat* buf);
 /*向屏幕输出一个字符*/
 void sys_putchar(char char_asci);
+void sys_help(void);
 /*在磁盘上搜索文件系统，若没有则格式化分区创建文件系统*/
 void filesys_init(void);
 /*将文件描述符转化为文件表的下标*/

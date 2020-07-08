@@ -159,6 +159,8 @@ void my_shell(void)
             buildin_rmdir(argc, argv);
         } else if(!strcmp("rm", argv[0])) {
             buildin_rm(argc, argv);
+        } else if(!strcmp("help", argv[0])) {
+            buildin_help(argc, argv[0]);
         } else {   //如果是外部命令
             int32_t pid = fork();
             if(pid) {

@@ -188,3 +188,8 @@ void exit(int32_t status)
 {
     return _syscall1(SYS_EXIT, status);
 }
+
+void help(void)
+{
+    return _syscall0(SYS_HELP);
+}
