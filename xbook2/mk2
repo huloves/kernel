@@ -1,0 +1,39 @@
+# MIT License
+# Copyright (c) 2020 Jason Hu, Zhu Yu
+# support bochs and vbox
+
+# virtual machine
+BOCHS 		= bochs
+BOCHSDBG 	= bochsdbg
+VBOX_MANAGE = VBoxManage
+
+# scripts dir
+SCRIPTS_DIR	= scripts
+
+# bochs development dir
+BOCHS_DIR       = $(SCRIPTS_DIR)/bochs/
+BXRC_WIN 		= $(BOCHS_DIR)bochsrc.win   # bochsrc for windows
+BXRC_LINUX 		= $(BOCHS_DIR)bochsrc.linux # bochsrc for linux
+VBOX_NAME	    = "xbook"                   # virtual box 虚拟机名称
+
+# 参数
+.PHONY: all bochs bochsdbg vbox
+
+bochs:
+ifeq ($(OS),Windows_NT)
+	$(BOCHS) -q -f $(BXRC_WIN)
+else
+	$(BOCHS) -q -f $(BXRC_LINUX)
+endif
+
+bochsdbg:
+ifeq ($(OS),Windows_NT)
+	$(BOCHSDBG) -q -f $(BXRC_WIN)
+else
+	$(BOCHSDBG) -q -f $(BXRC_LINUX)
+endif
+
+# virtual box
+vbox:
+	$(VBOX_MANAGE) startvm $(VBOX_NAME) --type gui 
+	
