@@ -1,0 +1,34 @@
+#################################################################
+# Configuration file for Bochs
+#################################################################
+
+# how much memory the emulated machine will have
+# Bochs在运行过程中能够使用的内存
+megs: 32
+
+# filenameof ROM images
+# 真实机器的BIOS和VGA BIOS
+romimage:file=/usr/local/share/bochs/BIOS-bochs-latest
+vgaromimage:file=/usr/local/share/bochs/VGABIOS-lgpl-latest
+
+# 设置Bochs所使用的磁盘
+# 若只有一个软盘,则使用 floppya即可,若有多个,则为floppya,floppyb...
+#floppya: 1_44=a.img, status=inserted
+
+# 选择启动盘符
+#boot: floopy #默认从软盘启动
+boot: disk
+
+# 设置日志文件的输出
+log: bochs.out
+
+# 开启或关闭某些功能
+# 关闭鼠标,并打开键盘
+mouse: enabled=0
+keyboard:keymap=/usr/local/share/bochs/keymaps/x11-pc-us.map
+
+# 硬盘设置
+ata0: enabled=1, ioaddr1=0x1f0, ioaddr2=0x3f0, irq=14
+ata0-master: type=disk, path="/home/huloves/bochs-2.6.11/hd60M.img", mode=flat, cylinders=121, heads=16, spt=63
+ata0-slave: type=disk, path="/home/huloves/bochs-2.6.11/hd80M.img", mode=flat, cylinders=162, heads = 16, spt = 63
+######################### 配置文件结束 ###########################
