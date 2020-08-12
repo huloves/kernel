@@ -34,12 +34,15 @@
 #ifndef _E1000_OSDEP_H_
 #define _E1000_OSDEP_H_
 
+#if 0
 #include <linux/types.h>
 #include <linux/pci.h>
 #include <linux/delay.h>
 #include <asm/io.h>
 #include <linux/interrupt.h>
 #include <linux/sched.h>
+#endif
+
 #include "kcompat.h"
 
 #define usec_delay(x) udelay(x)
