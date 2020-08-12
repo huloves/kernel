@@ -31,16 +31,26 @@
 
 #include <linux/version.h>
 #include <linux/types.h>
-#include <linux/errno.h>
+#include <errno.h>
 #include <linux/module.h>
 #include <linux/pci.h>
 #include <linux/netdevice.h>
-#include <linux/ioport.h>
-#include <linux/slab.h>
-#include <linux/pagemap.h>
-#include <linux/list.h>
-#include <linux/sched.h>
-#include <asm/io.h>
+// #include <linux/ioport.h>
+// #include <linux/slab.h>
+// #include <linux/pagemap.h>
+// #include <linux/list.h>
+#include <sched.h>
+// #include <linux/io.h>
+#include <stdint.h>
+
+typedef signed char				s8;
+typedef unsigned char			u8;
+typedef signed short			s16;
+typedef unsigned short			u16;
+typedef signed int				s32;
+typedef unsigned int			u32;
+typedef signed long long		s64;
+typedef unsigned long long		u64;
 
 #ifndef IRQ_HANDLED
 #define irqreturn_t void
