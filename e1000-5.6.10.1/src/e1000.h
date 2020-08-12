@@ -32,50 +32,55 @@
 #ifndef _E1000_H_
 #define _E1000_H_
 
-#include <linux/stddef.h>
-#include <linux/config.h>
-#include <linux/module.h>
-#include <linux/types.h>
-#include <asm/byteorder.h>
-#include <linux/init.h>
-#include <linux/mm.h>
-#include <linux/errno.h>
-#include <linux/ioport.h>
-#include <linux/pci.h>
-#include <linux/kernel.h>
-#include <linux/netdevice.h>
-#include <linux/etherdevice.h>
-#include <linux/skbuff.h>
-#include <linux/delay.h>
-#include <linux/timer.h>
-#include <linux/slab.h>
-#include <linux/vmalloc.h>
-#include <linux/interrupt.h>
-#include <linux/string.h>
-#include <linux/pagemap.h>
-#include <asm/bitops.h>
-#include <asm/io.h>
-#include <asm/irq.h>
-#include <linux/capability.h>
-#include <linux/in.h>
-#include <linux/ip.h>
-#include <linux/tcp.h>
-#include <linux/udp.h>
-#include <net/pkt_sched.h>
-#include <linux/list.h>
-#include <linux/reboot.h>
-#ifdef NETIF_F_TSO
-#include <net/checksum.h>
-#endif
-#ifdef SIOCGMIIPHY
-#include <linux/mii.h>
-#endif
-#ifdef SIOCETHTOOL
-#include <linux/ethtool.h>
-#endif
-#ifdef NETIF_F_HW_VLAN_TX
-#include <linux/if_vlan.h>
-#endif
+// #include <linux/stddef.h>
+// #include <linux/config.h>
+// #include <linux/module.h>
+// #include <linux/types.h>
+// #include <asm/byteorder.h>
+// #include <linux/init.h>
+// #include <mm.h>
+// #include <linux/errno.h>
+// #include <linux/ioport.h>
+// #include <linux/pci.h>
+// #include <linux/kernel.h>
+// #include <linux/netdevice.h>
+// #include <linux/etherdevice.h>
+// #include <linux/skbuff.h>
+// #include <linux/delay.h>
+// #include <linux/timer.h>
+// #include <linux/slab.h>
+// #include <linux/vmalloc.h>
+// #include <linux/interrupt.h>
+// #include <linux/string.h>
+// #include <linux/pagemap.h>
+// #include <asm/bitops.h>
+// #include <asm/io.h>
+// #include <asm/irq.h>
+// #include <linux/capability.h>
+// #include <linux/in.h>
+// #include <linux/ip.h>
+// #include <linux/tcp.h>
+// #include <linux/udp.h>
+// #include <net/pkt_sched.h>
+// #include <linux/list.h>
+// #include <linux/reboot.h>
+// #ifdef NETIF_F_TSO
+// #include <net/checksum.h>
+// #endif
+// #ifdef SIOCGMIIPHY
+// #include <linux/mii.h>
+// #endif
+// #ifdef SIOCETHTOOL
+// #include <linux/ethtool.h>
+// #endif
+// #ifdef NETIF_F_HW_VLAN_TX
+// #include <linux/if_vlan.h>
+// #endif
+
+#include "linux/dma-buf.h"
+#include <stdint.h>
+
+typedef uint32_t dma_addr_t;
 
 #define BAR_0		0
 #define BAR_1		1
