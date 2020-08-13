@@ -212,15 +212,16 @@ struct notifier_block e1000_notifier_reboot = {
 
 extern void e1000_check_options(struct e1000_adapter *adapter);
 
+//pci驱动
 static struct pci_driver e1000_driver = {
-	.name     = e1000_driver_name,
-	.id_table = e1000_pci_tbl,
-	.probe    = e1000_probe,
-	.remove   = __devexit_p(e1000_remove),
+	.name     = e1000_driver_name,   //驱动的名字，必须唯一
+	.id_table = e1000_pci_tbl,   //指向pci_device_id表的指针
+	.probe    = e1000_probe,   //驱动的probe函数指针
+	.remove   = __devexit_p(e1000_remove),   //当由pci_dev从系统移除时候调用函数的指针，或驱动被卸载时
 	/* Power Managment Hooks */
-#ifdef CONFIG_PM
-	.suspend  = e1000_suspend,
-	.resume   = e1000_resume
+#ifdef CONFIG_PM   //如果定义电源管理
+	.suspend  = e1000_suspend,   //pci_dev被挂起时调用的指针
+	.resume   = e1000_resume   //pci_dev恢复时调用的函数指针
 #endif
 };
 

@@ -981,6 +981,7 @@ struct e1000_hw_stats {
 };
 
 /* Structure containing variables used by the shared code (e1000_hw.c) */
+/* 主要保存网卡的硬件参数，其值通过pci_dev的内容获取*/
 struct e1000_hw {
     uint8_t *hw_addr;
     e1000_mac_type mac_type;

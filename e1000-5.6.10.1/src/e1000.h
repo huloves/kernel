@@ -198,7 +198,7 @@ struct e1000_desc_ring {
 #define E1000_CONTEXT_DESC(R, i)	E1000_GET_DESC(R, i, e1000_context_desc)
 
 /* board specific private data structure */
-
+/* 体现相应的硬件无关性。管理发送与接受数据包的相应缓冲空间，保存网卡的物理地址空间映射后的虚拟地址 */
 struct e1000_adapter {
 	struct timer_list tx_fifo_stall_timer;
 	struct timer_list watchdog_timer;
