@@ -237,6 +237,8 @@ MODULE_PARM_DESC(debug, "Debug level (0=none,...,16=all)");
  *
  * e1000_init_module is the first routine called when the driver is
  * loaded. All it does is register with the PCI subsystem.
+ * 
+ * e1000_init_module - 注册到PCI子系统中
  **/
 
 static int __init
@@ -427,6 +429,10 @@ e1000_reset(struct e1000_adapter *adapter)
  * e1000_probe initializes an adapter identified by a pci_dev structure.
  * The OS initialization, configuring of the adapter private structure,
  * and a hardware reset occur.
+ * 
+ * e1000_probe - 设备初始化，pci_dev结构体，操作系统初始化，e1000_adapter结构体配置，硬件重启工作
+ * @pdev: PCI设备结构体
+ * @ent: 通过PCI操作设备对象
  **/
 
 static int __devinit
@@ -468,19 +474,19 @@ e1000_probe(struct pci_dev *pdev,
 	}
 
 	SET_MODULE_OWNER(netdev);
-	SET_NETDEV_DEV(netdev, &pdev->dev);
+	SET_NETDEV_DEV(netdev, &pdev->dev);   //pci_dev-->net_device-->e1000_adapter
 
 	pci_set_drvdata(pdev, netdev);
 	adapter = netdev->priv;
-	adapter->netdev = netdev;
+	adapter->netdev = netdev;   //e1000_adapter也可以往回找到net_device和pci_dev
 	adapter->pdev = pdev;
 	adapter->hw.back = adapter;
 	adapter->msg_enable = (1 << debug) - 1;
 
-	mmio_start = pci_resource_start(pdev, BAR_0);
+	mmio_start = pci_resource_start(pdev, BAR_0);   //0表示设备映射资源的bar
 	mmio_len = pci_resource_len(pdev, BAR_0);
 
-	adapter->hw.hw_addr = ioremap(mmio_start, mmio_len);
+	adapter->hw.hw_addr = ioremap(mmio_start, mmio_len);   //ioremap是内核提供的用来映射外设寄存器到主存的函数
 	if(!adapter->hw.hw_addr) {
 		err = -EIO;
 		goto err_ioremap;
@@ -490,11 +496,12 @@ e1000_probe(struct pci_dev *pdev,
 		if(pci_resource_len(pdev, i) == 0)
 			continue;
 		if(pci_resource_flags(pdev, i) & IORESOURCE_IO) {
-			adapter->hw.io_base = pci_resource_start(pdev, i);
+			adapter->hw.io_base = pci_resource_start(pdev, i);   //硬件与存储空间io地址之间的映射
 			break;
 		}
 	}
-
+    
+	//核心操作函数
 	netdev->open = &e1000_open;
 	netdev->stop = &e1000_close;
 	netdev->hard_start_xmit = &e1000_xmit_frame;
@@ -503,7 +510,7 @@ e1000_probe(struct pci_dev *pdev,
 	netdev->set_mac_address = &e1000_set_mac;
 	netdev->change_mtu = &e1000_change_mtu;
 	netdev->do_ioctl = &e1000_ioctl;
-	set_ethtool_ops(netdev);
+	set_ethtool_ops(netdev);   //ethtool提供的函数
 #ifdef HAVE_TX_TIMEOUT
 	netdev->tx_timeout = &e1000_tx_timeout;
 	netdev->watchdog_timeo = 5 * HZ;
@@ -529,6 +536,7 @@ e1000_probe(struct pci_dev *pdev,
 	adapter->bd_number = cards_found;
 
 	/* setup the private structure */
+	/* 接受队列的大小，帧大小，申请队列内存。关闭中断*/
 
 	if((err = e1000_sw_init(adapter)))
 		goto err_sw_init;
@@ -645,7 +653,7 @@ e1000_probe(struct pci_dev *pdev,
 	e1000_reset(adapter);
 
 	strcpy(netdev->name, "eth%d");
-	if((err = register_netdev(netdev)))
+	if((err = register_netdev(netdev)))   //初始化工作完成，注册net_device
 		goto err_register;
 
 	DPRINTK(PROBE, INFO, "Intel(R) PRO/1000 Network Connection\n");
