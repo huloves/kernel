@@ -32,7 +32,7 @@
 
 #include "e1000_hw.h"
 
-static int32_t e1000_set_phy_type(struct e1000_hw *hw);
+static int32_t e1000_set_phy_type(struct e1000_hw *hw);   //设置网卡类型
 static void e1000_phy_init_script(struct e1000_hw *hw);
 static int32_t e1000_setup_copper_link(struct e1000_hw *hw);
 static int32_t e1000_setup_fiber_serdes_link(struct e1000_hw *hw);
