@@ -651,6 +651,8 @@ struct e1000_ffvt_entry {
  * WO - register is write only
  * R/clr - register is read only and is cleared when read
  * A - register array
+ * 
+ * 寄存器地址偏移（82543, 82544）
  */
 #define E1000_CTRL     0x00000  /* Device Control - RW */
 #define E1000_CTRL_DUP 0x00004  /* Device Control Duplicate (Shadow) - RW */
@@ -984,24 +986,24 @@ struct e1000_hw_stats {
 /* 主要保存网卡的硬件参数，其值通过pci_dev的内容获取*/
 struct e1000_hw {
     uint8_t *hw_addr;
-    e1000_mac_type mac_type;
+    e1000_mac_type mac_type;   //确定网卡类型，e1000网卡是一个系列，这里具体使用82540EM
     e1000_phy_type phy_type;
     uint32_t phy_init_script;
-    e1000_media_type media_type;
+    e1000_media_type media_type;   //媒体类型
     void *back;
     e1000_fc_type fc;
-    e1000_bus_speed bus_speed;
-    e1000_bus_width bus_width;
-    e1000_bus_type bus_type;
-    struct e1000_eeprom_info eeprom;
+    e1000_bus_speed bus_speed;   //总线速度类型
+    e1000_bus_width bus_width;   //总线宽度-32
+    e1000_bus_type bus_type;   //总线类型-pci
+    struct e1000_eeprom_info eeprom;   //eeprom信息
     e1000_ms_type master_slave;
     e1000_ms_type original_master_slave;
     e1000_ffe_config ffe_config_state;
     uint32_t asf_firmware_present;
-    unsigned long io_base;
-    uint32_t phy_id;
-    uint32_t phy_revision;
-    uint32_t phy_addr;
+    unsigned long io_base;   //IO基地址
+    uint32_t phy_id;   //物理设备id
+    uint32_t phy_revision;   //物理设备版本
+    uint32_t phy_addr;   //物理设备地址
     uint32_t original_fc;
     uint32_t txcw;
     uint32_t autoneg_failed;
