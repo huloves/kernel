@@ -1001,7 +1001,7 @@ struct e1000_hw {
     e1000_ffe_config ffe_config_state;
     uint32_t asf_firmware_present;
     unsigned long io_base;   //IO基地址
-    uint32_t phy_id;   //物理设备id
+    uint32_t phy_id;
     uint32_t phy_revision;   //物理设备版本
     uint32_t phy_addr;   //物理设备地址
     uint32_t original_fc;
