@@ -206,8 +206,63 @@ p_mode_start:
 
 enter_kernel:
     mov byte [gs:162],'V'
+    call kernel_init
 
-    jmp $
+    mov esp, 0xc009f000
+    jmp KERNEL_ENTRY_POINT
+
+;---------------------------------------------------
+kernel_init:
+    xor eax, eax
+    xor ebx, ebx
+    xor ecx, ecx
+    xor edx, edx
+
+    mov dx, [KERNEL_BIN_BASE_ADDR + 42]
+    mov bx, [KERNEL_BIN_BASE_ADDR + 28]
+
+    add ebx, KERNEL_BIN_BASE_ADDR
+    mov cx, [KERNEL_BIN_BASE_ADDR + 44]
+.each_segment:
+    cmp byte [ebx + 0], PT_NULL
+    je .PT_NULL
+
+    push dword [ebx + 16]
+    mov eax, [ebx + 4]
+    add eax, KERNEL_BIN_BASE_ADDR
+    push eax
+    push dword [ebx + 8]
+
+    call mem_cpy
+    add esp, 12
+
+.PT_NULL:
+    add ebx, edx
+
+    loop .each_segment
+    ret
+
+;----------------------------------------------------
+mem_cpy:                        ;mem_cpy(dst, src, size)
+                                ;使用栈传递参数,参数从右往左压入栈
+                                ;dst:目的地址
+                                ;src:源地址
+                                ;size:该程序段的大小,字节为单位
+                                ;输出:无
+    cld
+    push ebp
+    mov ebp,esp    
+    push ecx                    ;将ecx的内容保护起来
+    
+    mov edi,[ebp + 8]           ;dst
+    mov esi,[ebp + 12]          ;src
+    mov ecx,[ebp + 16]          ;size
+    rep movsb
+
+    pop ecx
+    pop ebp
+
+    ret
 
 ;----------------------------------------------------
 set_page:                       ;创建页目录及页表
