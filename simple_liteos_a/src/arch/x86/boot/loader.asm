@@ -161,7 +161,101 @@ p_mode_start:
     mov byte [gs:160],'P'
     mov byte [gs:161],0001_0100B
 
+    ;jmp $
+
+;----------------------------------------------------
+    ;加载kernel.bin
+    ; mov eax, KERNEL_START_SECTOR
+    ; mov ebx, KERNEL_BIN_BASE_ADDR
+    ; mov ecx, 200
+
+    ; call rd_disk_m_32
+
+;----------------------------------------------------
+    ;创建页目录表及页表并初始化页内存位图
+    call set_page
+    
+    ;将描述符表地址写入内存gdt_ptr
+    sgdt [gdt_ptr]
+
+    ;将gdt描述符中视频段描述符中的段基址+0xc0000000,映射到内核空间
+    mov ebx,[gdt_ptr + 2]
+    or dword [ebx+0x18+4],0xc0000000
+
+    ;将GDT映射到高地址
+    add dword [gdt_ptr + 2],0xc0000000
+
+    ;将堆栈指针映射到内核空间
+    add esp,0xc0000000
+
+    ;页目录地址存入cr3
+    mov eax,PAGE_DIR_TABLE_POS
+    mov cr3,eax
+
+    ;打开cr0的PG位
+    mov eax,cr0
+    or eax,0x80000000
+    mov cr0,eax
+
+    ;重新加载gdt
+    lgdt [gdt_ptr]
+
+;--------------------------------------------------------
+    ;强制刷新流水线,更新gdt
+    jmp SELECTOR_CODE:enter_kernel
+
+enter_kernel:
+    mov byte [gs:162],'V'
+
     jmp $
+
+;----------------------------------------------------
+set_page:                       ;创建页目录及页表
+                                ;初始化页目录表,页表
+    mov ecx, 4096
+    mov esi, 0
+.clear_page_dir:                ;页目录项清0
+    mov byte [PAGE_DIR_TABLE_POS + esi],0
+    inc esi
+    loop .clear_page_dir
+
+    ;建立页目录项,页目录项0和0xc00(768)都存为第一个页表的地址
+.create_pde:
+    mov eax,PAGE_DIR_TABLE_POS              ;PAGE_DIR_TABLE_POS = 0x100000
+    add eax,0x1000                          ;eax为第一个页表的位置及属性,0x101000
+    mov ebx,eax
+
+    or eax,PG_US_U | PG_RW_W | PG_P         ;0x101007
+    mov [PAGE_DIR_TABLE_POS + 0x0],eax
+    mov [PAGE_DIR_TABLE_POS + 0xc00],eax    ;0xc00=768*4 0xc0000000~0xffffffff属于内核空间
+    
+    sub eax,0x1000
+    mov [PAGE_DIR_TABLE_POS + 4092], eax    ;使页目录表最后一项指向页目录表自己
+
+    ;创建页表项(PTE)
+    mov ecx,256                             ;1M低端内存/每页大小4k = 256
+    mov esi,0
+    mov edx,PG_US_U | PG_RW_W | PG_P        ;US=1,RW=1,P=1
+.create_pte:
+    mov [ebx+esi*4],edx
+    add edx,4096
+    inc esi
+    loop .create_pte
+
+    ;创建内核其他页表项,为实现内核共享
+    mov eax,PAGE_DIR_TABLE_POS
+    add eax,0x2000
+    or eax,PG_US_U | PG_RW_W | PG_P
+    mov ebx,PAGE_DIR_TABLE_POS
+    mov ecx,254                             ;769~1022个页表的位置
+    mov esi,769
+.create_kernel_pde:
+    mov [ebx+esi*4],eax
+    inc esi
+    add eax,0x1000
+    loop .create_kernel_pde
+
+    ret
 
 ;----------------------------------------------------
 rd_disk_m_32:						;eax=LBA扇区号
