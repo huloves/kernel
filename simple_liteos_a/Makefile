@@ -19,7 +19,7 @@ AS = nasm
 CC = gcc
 LD = ld
 
-ASMINLIB = -I src/arch/x86/boot/include/
+ASMINLIB = -I arch/x86/boot/include/
 
 CFLAGS = -m32 -Wall -c -D NDBUG -fno-builtin -fno-stack-protector -W -Wstrict-prototypes \
 		 -Wmissing-prototypes
@@ -29,10 +29,10 @@ LDFLAGS = -m elf_i386 -Ttext $(ENTRY_POINT) -e main -Map $(BUILD_DIR)/kernel.map
 OBJS = $(BUILD_DIR)/main.o
 
 ###### MBR代码编译 ######
-$(BUILD_DIR)/mbr.bin: src/arch/x86/boot/mbr.asm
+$(BUILD_DIR)/mbr.bin: arch/x86/boot/mbr.asm
 	$(AS) $(ASMINLIB) $< -o $@
 
-$(BUILD_DIR)/loader.bin: src/arch/x86/boot/loader.asm
+$(BUILD_DIR)/loader.bin: arch/x86/boot/loader.asm
 	$(AS) $(ASMINLIB) $< -o $@
 
 ###### c代码编译 ######
