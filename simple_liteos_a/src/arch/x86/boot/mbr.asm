@@ -1,8 +1,9 @@
-%include "boot.inc"
+    %include "boot.inc"
 
-org 0x7c00
-[bits 16]
-align 16
+    org 0x7c00
+    [bits 16]
+    
+    align 16
 
 entry:
     mov ax, cs
@@ -25,7 +26,12 @@ clean_screen:
 	mov byte [es:6],'T'
 	mov byte [es:7],0x07
 
-    jmp $   ;循环，查看是否打印
+    mov eax, LOADER_START_SECTOR
+    mov bx, LOADER_BASE_ADDR
+    mov cx, 4
+    call rd_disk_m_16
+
+    jmp LOADER_BASE_ADDR   ;循环，查看是否打印
 
 ;------------------------------------------------------------------
 ;功能:读取硬盘n个扇区
