@@ -1,7 +1,40 @@
 ;文件说明：主引导程序
 ;创建日期：2020-9-7
 ;-------------------------------------------------------
-SECTION mbr vstart=0x7c00
+	org 0x7c00
+
+	base_of_stack     equ 0x7c00
+	base_of_loader    equ 0x1000
+	off_set_of_loader equ 0x00
+
+	root_dir_sectors             equ 14
+	sector_num_of_root_dir_start equ 19
+	sector_num_of_fat1_start     equ 1
+	sector_balance               equ 17
+
+	jmp short label_start
+	nop
+	BS_OEMName  db 'MINEboot'
+	BPB_BytesPerSec  dw 512
+	BPB_SecPerClus   db 1
+	BPB_RsvdSecCnt   dw 1
+	BPB_NumFATs      db 2
+	BPB_RootEntCnt   dw 224
+	BPB_TotSec16     dw 2880
+	BPB_Media        db 0xf0
+	BPB_FATSz16      dw 9
+	BPB_SecPerTrk    dw 18
+	BPB_NumHeads     dw 2
+	BPB_HiddSec      dd 0
+	BPB_TotSec32     dd 0
+	BS_DrvNum        db 0
+	BS_Reserved1     db 0
+	BS_BootSig       db 0x29
+	BS_VolID         dd 0
+	BS_VolLab        db 'boot leader'
+	BS_FileSysType   db 'FAT12'
+
+label_start:
     mov ax,cx
     mov ds,ax
     mov es,ax
@@ -31,20 +64,27 @@ SECTION mbr vstart=0x7c00
 								;下标从0开始,0x18=24,0x4f=80
     int 0x10					;int 0x10
 
-    mov byte [gs:0x00], 'L'
-    mov byte [gs:0x01], 0x07
-    mov byte [gs:0x02], 'o'
-    mov byte [gs:0x03], 0x07
-    mov byte [gs:0x04], 'a'
-    mov byte [gs:0x05], 0x07
-    mov byte [gs:0x06], 'd'
-    mov byte [gs:0x07], 0x07
-    mov byte [gs:0x08], 'i'
-    mov byte [gs:0x09], 0x07
-    mov byte [gs:0x0a], 'n'
-    mov byte [gs:0x0b], 0x07
-    mov byte [gs:0x0c], 'g'
-    mov byte [gs:0x0d], 0x07
+	;set focus
+	mov ax, 0x0200
+	mov bx, 0x0000
+	mov dx, 0x0000
+	int 0x10
+
+	;display on screen : Start Booting
+	mov ax, 0x1301
+	mov bx, 0x000f
+	mov dx, 0x0000
+	mov cx, 10
+	push ax
+	mov ax, ds
+	mov es, ax
+	pop ax
+	mov bp, StartBootMessage
+	int 0x10
+
+	jmp $
+
+StartBootMessage: db "Start Boot"
 
 ;------------------------------------------------------
 read_hard_disk_0:			    ;从硬盘读取一个扇区
