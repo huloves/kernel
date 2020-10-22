@@ -3,14 +3,14 @@
 ;-------------------------------------------------------
 	org 0x7c00
 
-	base_of_stack     equ 0x7c00
-	base_of_loader    equ 0x1000
-	off_set_of_loader equ 0x00
+	BaseOfStack     equ 0x7c00
+	BaseOfLoader    equ 0x1000
+	OffsetOfLoader  equ 0x00
 
-	root_dir_sectors             equ 14
-	sector_num_of_root_dir_start equ 19
-	sector_num_of_fat1_start     equ 1
-	sector_balance               equ 17
+	RootDirSector                equ 14   ;根目录占用的扇区数
+	SectorNumOfRootDirStart      equ 19
+	SectorNumOfFAT1Start         equ 1
+	SectorBalance                equ 17   ;用于平衡文件的起始簇号与数据区起始簇号的差值
 
 	jmp short label_start
 	nop
@@ -140,6 +140,10 @@ read_hard_disk_0:			    ;从硬盘读取一个扇区
 	pop ax
 
 	ret
+
+;------------------------------------------------------
+	;search leader.bin
+	
 
 ;-------------------------------------------------------
 
