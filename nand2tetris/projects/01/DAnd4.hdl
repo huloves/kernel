@@ -1,7 +1,8 @@
-CHIP DAnd3 {
+CHIP DAnd4 {
     IN a, b, c, d;
     OUT out;
 
+    PARTS:
     And(a=a, b=b, out=temp0);
     And(a=temp0, b=c, out=temp1);
     And(a=temp1, b=d, out=out);
