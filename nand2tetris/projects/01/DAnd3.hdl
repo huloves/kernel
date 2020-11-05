@@ -1,0 +1,7 @@
+CHIP DAnd3 {
+    IN a, b, c;
+    OUT out;
+
+    And(a=a, b=b, out=temp);
+    And(a=temp, b=c, out=out);
+}
