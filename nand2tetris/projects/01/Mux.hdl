@@ -15,4 +15,14 @@ CHIP Mux {
 
     PARTS:
     // Put your code here:
+    Not(in=a, out=aNot);
+    Not(in=b, out=bNot);
+    Not(in=sel, out=selNot);
+
+    DAnd3(a=aNot, b=b, c=sel, out=temp1);
+    DAnd3(a=a, b=bNot, c=selNot, out=temp2);
+    DAnd3(a=a, b=b, c=selNot, out=temp3);
+    DAnd3(a=a, b=b, c=sel, out=temp4);
+
+    DOr4(a=temp1, b=temp2, c=temp3, d=temp4, out=out);
 }
