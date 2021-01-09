@@ -14,4 +14,16 @@ CHIP FullAdder {
 
     PARTS:
     // Put you code here:
+    Not(in=a, out=aNot);
+    Not(in=b, out=bNot);
+    Not(in=c, out=cNot);
+    And3(a=aNot, b=b, c=c, out=carryTemp1);
+    And3(a=a, b=bNot, c=c, out=carryTemp2);
+    And3(a=a, b=b, c=cNot, out=carryTemp3);
+    And3(a=a, b=b, c=c, out=Temp4);
+    Or4(a=carryTemp1, b=carryTemp2, c=carryTemp3, d=Temp4, out=carry);
+    And3(a=aNot, b=bNot, c=c, out=sumTemp1);
+    And3(a=aNot, b=b, c=cNot, out=sumTemp2);
+    And3(a=a, b=bNot, c=cNot, out=sumTemp3);
+    Or4(a=sumTemp1, b=sumTemp2, c=sumTemp3, d=Temp4, out=sum);
 }

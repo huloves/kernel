@@ -1,0 +1,10 @@
+CHIP Or4 {
+    IN a, b, c, d;
+    OUT out;
+
+    PARTS:
+    // Put your code here:
+    Or(a=a, b=b, out=temp1);
+    Or(a=temp1, b=c, out=temp2);
+    Or(a=temp2, b=d, out=out);
+}
