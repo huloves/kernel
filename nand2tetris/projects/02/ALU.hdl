@@ -42,5 +42,30 @@ CHIP ALU {
         ng; // 1 if (out < 0),  0 otherwise
 
     PARTS:
-   // Put you code here:
+    // Put you code here:
+    Mux16(a=x, b=false, sel=zx, out=x1);
+    Not16(in=x1, out=notx);
+    Mux16(a=x1, b=notx, sel=nx, out=x2);
+
+    Mux16(a=y, b=false, sel=zy, out=y1);
+    Not16(in=y1, out=noty);
+    Mux16(a=y1, b=noty, sel=ny, out=y2);
+
+    Add16(a=x2, b=y2, out=xaddy);
+    And16(a=x2, b=y2, out=xandy);
+    Mux16(a=xandy, b=xaddy, sel=f, out=out0);
+
+    Not16(in=out0, out=notout);
+    Mux16(a=out0, b=notout, sel=no, out=out, out=sign, out[15]=flag); //mark1
+    /*
+    notes: the out can't be used
+    error massage: can't connect gate's output pin to part
+    */
+    And16(a=sign, b=true, out[0..7]=out1, out[8..15]=out2); //mark2
+    Or8Way(in=out1, out=st1);
+    Or8Way(in=out2, out=st2);
+    Or(a=st1, b=st2, out=st);
+    Mux(a=true, b=false, sel=st, out=zr);
+
+    Mux(a=false, b=true, sel=flag, out=ng);
 }
