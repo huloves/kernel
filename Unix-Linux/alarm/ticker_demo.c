@@ -5,17 +5,29 @@
 #include <signal.h>
 #include "../my_function/set_ticker.h"
 
+// typedef unsigned long uint64_t;
+
+uint64_t ticks;
+
+void signal_headler(int signum)
+{
+    printf("ticks = %lld\n", ticks++);
+}
+
 int main()
 {
     void countdown(int);
 
-    signal(SIGALRM, countdown);
-    if(set_ticker(500) == -1)
+    // signal(SIGALRM, countdown);
+    signal(SIGALRM, signal_headler);
+    if(set_ticker(1) == -1) {
         perror("set_ticker");
-    else
-        while(1)
+    }
+    else {
+        while(1) {
             pause();
-
+        }
+    }
     return 0;
 }
 
