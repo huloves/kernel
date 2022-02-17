@@ -224,20 +224,20 @@ fail_nomem:
 spinlock_t mmlist_lock __cacheline_aligned = SPIN_LOCK_UNLOCKED;
 int mmlist_nr;
 
-#define allocate_mm()	(kmem_cache_alloc(mm_cachep, SLAB_KERNEL))
+#define allocate_mm()	(kmem_cache_alloc(mm_cachep, SLAB_KERNEL))   //从slab分配器分配一个mm_struct
 #define free_mm(mm)	(kmem_cache_free(mm_cachep, (mm)))
 
 static struct mm_struct * mm_init(struct mm_struct * mm)
 {
-	atomic_set(&mm->mm_users, 1);
-	atomic_set(&mm->mm_count, 1);
-	init_rwsem(&mm->mmap_sem);
-	mm->page_table_lock = SPIN_LOCK_UNLOCKED;
-	mm->pgd = pgd_alloc(mm);
-	mm->def_flags = 0;
-	if (mm->pgd)
+	atomic_set(&mm->mm_users, 1);   //设置用户数为1
+	atomic_set(&mm->mm_count, 1);   //设置mm的引用计数为1
+	init_rwsem(&mm->mmap_sem);      //初始化VMA链表的信号量
+	mm->page_table_lock = SPIN_LOCK_UNLOCKED;   //初始化写访问的自旋锁
+	mm->pgd = pgd_alloc(mm);   //为该结构分配新的PGD
+	mm->def_flags = 0;   //默认情况下，内存中进程所用的页面未上锁
+	if (mm->pgd)   //若PGD存在，染灰初始化后的结构
 		return mm;
-	free_mm(mm);
+	free_mm(mm);   //分配失败，删除mm_struct结构并返回
 	return NULL;
 }
 	
@@ -249,10 +249,10 @@ struct mm_struct * mm_alloc(void)
 {
 	struct mm_struct * mm;
 
-	mm = allocate_mm();
+	mm = allocate_mm();   //从slab分配一个mm_struct
 	if (mm) {
-		memset(mm, 0, sizeof(*mm));
-		return mm_init(mm);
+		memset(mm, 0, sizeof(*mm));   //将结构的所有字段归0
+		return mm_init(mm);   //进行基本的初始化
 	}
 	return NULL;
 }
@@ -273,16 +273,16 @@ inline void __mmdrop(struct mm_struct *mm)
 /*
  * Decrement the use count and release all resources for an mm.
  */
-void mmput(struct mm_struct *mm)
+void mmput(struct mm_struct *mm)   //mm_user计数减1
 {
-	if (atomic_dec_and_lock(&mm->mm_users, &mmlist_lock)) {
-		extern struct mm_struct *swap_mm;
-		if (swap_mm == mm)
+	if (atomic_dec_and_lock(&mm->mm_users, &mmlist_lock)) {   //获取mmlist_lock锁是，原子性地将mm_users减1.若减到0，返回该锁
+		extern struct mm_struct *swap_mm;   //若mm_users减到0，移除与mm有关的结构
+		if (swap_mm == mm)   //swap_mm是最后的mm，又vmscan代码换出最后的mm。若当前进程是最后换出的mm，这里将移到链表的下一个表项
 			swap_mm = list_entry(mm->mmlist.next, struct mm_struct, mmlist);
-		list_del(&mm->mmlist);
-		mmlist_nr--;
-		spin_unlock(&mmlist_lock);
-		exit_mmap(mm);
+		list_del(&mm->mmlist);   //从链表中移除该mm
+		mmlist_nr--;减少mm计数
+		spin_unlock(&mmlist_lock);   //释放mmlist锁
+		exit_mmap(mm);   //移除所有相关的映射
 		mmdrop(mm);
 	}
 }
@@ -317,7 +317,7 @@ static int copy_mm(unsigned long clone_flags, struct task_struct * tsk)
 	struct mm_struct * mm, *oldmm;
 	int retval;
 
-	tsk->min_flt = tsk->maj_flt = 0;
+	tsk->min_flt = tsk->maj_flt = 0;   //初始化与内存管理相关的task_struct字段
 	tsk->cmin_flt = tsk->cmaj_flt = 0;
 	tsk->nswap = tsk->cnswap = 0;
 
@@ -329,43 +329,43 @@ static int copy_mm(unsigned long clone_flags, struct task_struct * tsk)
 	 *
 	 * We need to steal a active VM for that..
 	 */
-	oldmm = current->mm;
-	if (!oldmm)
+	oldmm = current->mm;   //用当前运行进程的mm复制
+	if (!oldmm)   //没有mm的内核线程，所以立即返回
 		return 0;
 
-	if (clone_flags & CLONE_VM) {
-		atomic_inc(&oldmm->mm_users);
+	if (clone_flags & CLONE_VM) {   //如果设置了CLONE_VM标志位，子进程与父进程共享mm
+		atomic_inc(&oldmm->mm_users);   //mm_user字段加1
 		mm = oldmm;
-		goto good_mm;
+		goto good_mm;   //good_mm标记设置tsk->mm和tsk->active_mm，并返回成功
 	}
 
 	retval = -ENOMEM;
-	mm = allocate_mm();
+	mm = allocate_mm();   //分配新的mm
 	if (!mm)
 		goto fail_nomem;
 
 	/* Copy the current MM stuff.. */
-	memcpy(mm, oldmm, sizeof(*mm));
+	memcpy(mm, oldmm, sizeof(*mm));   //复制父mm，并利用init_mm()来初始化process-specific mm fields
 	if (!mm_init(mm))
 		goto fail_nomem;
 
-	if (init_new_context(tsk,mm))
+	if (init_new_context(tsk,mm))   //为不能自动管理MMU的体系架构，初始化MMU context
 		goto free_pt;
 
-	down_write(&oldmm->mmap_sem);
+	down_write(&oldmm->mmap_sem);   //调用dup_mmap()复制所有父进程用到的VMA区域
 	retval = dup_mmap(mm);
 	up_write(&oldmm->mmap_sem);
 
-	if (retval)
+	if (retval)   //若dup_mmap()失败，将到free_pt标记处调用mmput()，将mm的使用计数减1
 		goto free_pt;
 
 	/*
 	 * child gets a private LDT (if there was an LDT in the parent)
 	 */
-	copy_segments(tsk, mm);
+	copy_segments(tsk, mm);   //复制父进程的LDT
 
 good_mm:
-	tsk->mm = mm;
+	tsk->mm = mm;   //设置新的mm，active_mm并返回成功
 	tsk->active_mm = mm;
 	return 0;
 
