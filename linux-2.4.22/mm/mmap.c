@@ -400,74 +400,74 @@ unsigned long do_mmap_pgoff(struct file * file, unsigned long addr, unsigned lon
 	int error;
 	rb_node_t ** rb_link, * rb_parent;
 
-	if (file && (!file->f_op || !file->f_op->mmap))
+	if (file && (!file->f_op || !file->f_op->mmap))   //若映射了一个文件或设备，这里确定一个文件系统或设备相关的mmap函数。对多数文件系统，这里将调用generic_file_mmap()
 		return -ENODEV;
 
-	if (!len)
+	if (!len)   //长度为0的mmap不被请求
 		return addr;
 
-	len = PAGE_ALIGN(len);
+	len = PAGE_ALIGN(len);   //保证映射限于用户的地址空间部分。
 
-	if (len > TASK_SIZE || len == 0)
+	if (len > TASK_SIZE || len == 0)   //#define TASK_SIZE	(PAGE_OFFSET)
 		return -EINVAL;
 
 	/* offset overflow? */
-	if ((pgoff + (len >> PAGE_SHIFT)) < pgoff)
+	if ((pgoff + (len >> PAGE_SHIFT)) < pgoff)   //保证映射不会超过最大可能的文件大小。Ensures the mapping will not overflow the end of the largest possible file size
 		return -EINVAL;
 
 	/* Too many mappings? */
-	if (mm->map_count > max_map_count)
+	if (mm->map_count > max_map_count)   //仅允许max_map_count个数量的映射，缺省时，该数值为DEFAULT_MAX_MAP_COUNT
 		return -ENOMEM;
 
 	/* Obtain the address to map to. we verify (or select) it and ensure
 	 * that it represents a valid section of the address space.
 	 */
-	addr = get_unmapped_area(file, addr, len, pgoff, flags);
-	if (addr & ~PAGE_MASK)
+	addr = get_unmapped_area(file, addr, len, pgoff, flags);   //完成有效性检查后，调用设备或文件相关的get_unmapped_area()函数。若没有设备相关函数，则调用arch_get_unmapped_area()
+	if (addr & ~PAGE_MASK)   //PAGE_MASK = 0xFFFFF000，～PAGE_MASK = 0x00000FFF
 		return addr;
 
 	/* Do simple checking here so the lower-level routines won't have
 	 * to. we assume access permissions have been handled by the open
 	 * of the memory object, so we don't do any here.
 	 */
-	vm_flags = calc_vm_flags(prot,flags) | mm->def_flags | VM_MAYREAD | VM_MAYWRITE | VM_MAYEXEC;
+	vm_flags = calc_vm_flags(prot,flags) | mm->def_flags | VM_MAYREAD | VM_MAYWRITE | VM_MAYEXEC;   //calc_vm_flags()将用户空间的prot和flags换为MV的相应标志位
 
 	/* mlock MCL_FUTURE? */
-	if (vm_flags & VM_LOCKED) {
+	if (vm_flags & VM_LOCKED) {   //Checks if it has been requested that all future mappings be locked in memory.
 		unsigned long locked = mm->locked_vm << PAGE_SHIFT;
 		locked += len;
-		if (locked > current->rlim[RLIMIT_MEMLOCK].rlim_cur)
+		if (locked > current->rlim[RLIMIT_MEMLOCK].rlim_cur)   //it makes sure the process isn’t locking more memory than it is allowed to.
 			return -EAGAIN;
 	}
 
-	if (file) {
-		switch (flags & MAP_TYPE) {
+	if (file) {   //If a file is memory mapped, this checks the file’s access permissions.
+		switch (flags & MAP_TYPE) {   //#define MAP_TYPE	0x00f		/* Mask for type of mapping */
 		case MAP_SHARED:
-			if ((prot & PROT_WRITE) && !(file->f_mode & FMODE_WRITE))
+			if ((prot & PROT_WRITE) && !(file->f_mode & FMODE_WRITE))   //若请求写访问，这里保证文件已经以写方式打开
 				return -EACCES;
 
 			/* Make sure we don't allow writing to an append-only file.. */
-			if (IS_APPEND(file->f_dentry->d_inode) && (file->f_mode & FMODE_WRITE))
+			if (IS_APPEND(file->f_dentry->d_inode) && (file->f_mode & FMODE_WRITE))   //文件以追加方式打开，这里保证它不能被写入。这里不检查prot，因为prot字段仅应用于映射那些需要检查的已打开文件
 				return -EACCES;
 
 			/* make sure there are no mandatory locks on the file. */
 			if (locks_verify_locked(file->f_dentry->d_inode))
 				return -EAGAIN;
 
-			vm_flags |= VM_SHARED | VM_MAYSHARE;
+			vm_flags |= VM_SHARED | VM_MAYSHARE;   //休整标志位，与文件标志位一致
 			if (!(file->f_mode & FMODE_WRITE))
 				vm_flags &= ~(VM_MAYWRITE | VM_SHARED);
 
 			/* fall through */
 		case MAP_PRIVATE:
-			if (!(file->f_mode & FMODE_READ))
+			if (!(file->f_mode & FMODE_READ))   //保证在映射前，文件是可以读的
 				return -EACCES;
 			break;
 
 		default:
 			return -EINVAL;
 		}
-	} else {
+	} else {   //若文件映射用于匿名使用，若请求时MAP_PRIVATE，这里将休整标志位
 		vm_flags |= VM_SHARED | VM_MAYSHARE;
 		switch (flags & MAP_TYPE) {
 		default:
@@ -482,8 +482,8 @@ unsigned long do_mmap_pgoff(struct file * file, unsigned long addr, unsigned lon
 
 	/* Clear old maps */
 munmap_back:
-	vma = find_vma_prepare(mm, addr, &prev, &rb_link, &rb_parent);
-	if (vma && vma->vm_start < addr + len) {
+	vma = find_vma_prepare(mm, addr, &prev, &rb_link, &rb_parent);   //为找到给定地址的VMA遍历VMA的红黑树
+	if (vma && vma->vm_start < addr + len) {   //若找到一个VMA，并且是新映射的一部分，这里就移除旧的映射，欣慰新的映射将涵盖这两部分
 		if (do_munmap(mm, addr, len))
 			return -ENOMEM;
 		goto munmap_back;
@@ -491,7 +491,7 @@ munmap_back:
 
 	/* Check against address space limit. */
 	if ((mm->total_vm << PAGE_SHIFT) + len
-	    > current->rlim[RLIMIT_AS].rlim_cur)
+	    > current->rlim[RLIMIT_AS].rlim_cur)   //保证新的映射不会超过进程所允许的总VM
 		return -ENOMEM;
 
 	/* Private writable mapping? Check memory availability.. */
@@ -501,19 +501,19 @@ munmap_back:
 		return -ENOMEM;
 
 	/* Can we just expand an old anonymous mapping? */
-	if (!file && !(vm_flags & VM_SHARED) && rb_parent)
-		if (vma_merge(mm, prev, rb_parent, addr, addr + len, vm_flags))
+	if (!file && !(vm_flags & VM_SHARED) && rb_parent)   //判断是否两个相邻的内存映射时匿名的
+		if (vma_merge(mm, prev, rb_parent, addr, addr + len, vm_flags))   //扩展旧的映射
 			goto out;
 
 	/* Determine the object being mapped and call the appropriate
 	 * specific mapper. the address has already been validated, but
 	 * not unmapped, but the maps are removed from the list.
 	 */
-	vma = kmem_cache_alloc(vm_area_cachep, SLAB_KERNEL);
+	vma = kmem_cache_alloc(vm_area_cachep, SLAB_KERNEL);   //从slab分配器中分配一个vm_area_struct
 	if (!vma)
 		return -ENOMEM;
 
-	vma->vm_mm = mm;
+	vma->vm_mm = mm;   //填充基本的字段
 	vma->vm_start = addr;
 	vma->vm_end = addr + len;
 	vma->vm_flags = vm_flags;
@@ -524,9 +524,9 @@ munmap_back:
 	vma->vm_private_data = NULL;
 	vma->vm_raend = 0;
 
-	if (file) {
+	if (file) {   //若是一个文件映射，填充文件相关的字段
 		error = -EINVAL;
-		if (vm_flags & (VM_GROWSDOWN|VM_GROWSUP))
+		if (vm_flags & (VM_GROWSDOWN|VM_GROWSUP))   //检查文件映射的无效标志
 			goto free_vma;
 		if (vm_flags & VM_DENYWRITE) {
 			error = deny_write_access(file);
@@ -535,11 +535,11 @@ munmap_back:
 			correct_wcount = 1;
 		}
 		vma->vm_file = file;
-		get_file(file);
+		get_file(file);   //将文件使用计数加1
 		error = file->f_op->mmap(file, vma);
 		if (error)
 			goto unmap_and_free_vma;
-	} else if (flags & MAP_SHARED) {
+	} else if (flags & MAP_SHARED) {   //若是一个匿名公共映射
 		error = shmem_zero_setup(vma);
 		if (error)
 			goto free_vma;
@@ -575,12 +575,12 @@ munmap_back:
 		}
 	}
 
-	vma_link(mm, vma, prev, rb_link, rb_parent);
+	vma_link(mm, vma, prev, rb_link, rb_parent);   //链接新的vma
 	if (correct_wcount)
-		atomic_inc(&file->f_dentry->d_inode->i_writecount);
+		atomic_inc(&file->f_dentry->d_inode->i_writecount);   //更新文件写计数
 
 out:	
-	mm->total_vm += len >> PAGE_SHIFT;
+	mm->total_vm += len >> PAGE_SHIFT;   //更新进程mm_struct的统计计数并返回新地址
 	if (vm_flags & VM_LOCKED) {
 		mm->locked_vm += len >> PAGE_SHIFT;
 		make_pages_present(addr, addr + len);

@@ -764,8 +764,8 @@ extern void end_lazy_tlb(struct mm_struct *mm);
 extern inline void FASTCALL(__mmdrop(struct mm_struct *));
 static inline void mmdrop(struct mm_struct * mm)
 {
-	if (atomic_dec_and_test(&mm->mm_count))
-		__mmdrop(mm);
+	if (atomic_dec_and_test(&mm->mm_count))   //原子性的将mm_count减1
+		__mmdrop(mm);   //若mm_count引用计数减为0，将调用__mmdrop()
 }
 
 /* mmput gets rid of the mappings and all user-space */

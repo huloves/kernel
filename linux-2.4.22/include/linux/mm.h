@@ -556,12 +556,12 @@ extern unsigned long do_mmap_pgoff(struct file *file, unsigned long addr,
 
 static inline unsigned long do_mmap(struct file *file, unsigned long addr,
 	unsigned long len, unsigned long prot,
-	unsigned long flag, unsigned long offset)
+	unsigned long flag, unsigned long offset)   //对do_mmap_pgoff()的简单封装
 {
-	unsigned long ret = -EINVAL;
-	if ((offset + PAGE_ALIGN(len)) < offset)
+	unsigned long ret = -EINVAL;   //缺省时，返回-EINVAL
+	if ((offset + PAGE_ALIGN(len)) < offset)   //保证区域的大小不会超过地址空间的总大小
 		goto out;
-	if (!(offset & ~PAGE_MASK))
+	if (!(offset & ~PAGE_MASK))   //按页面排列offset，并调用do_mmap_pgoff来映射该区域
 		ret = do_mmap_pgoff(file, addr, len, prot, flag, offset >> PAGE_SHIFT);
 out:
 	return ret;

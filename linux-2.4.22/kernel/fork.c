@@ -264,10 +264,10 @@ struct mm_struct * mm_alloc(void)
  */
 inline void __mmdrop(struct mm_struct *mm)
 {
-	BUG_ON(mm == &init_mm);
-	pgd_free(mm->pgd);
-	destroy_context(mm);
-	free_mm(mm);
+	BUG_ON(mm == &init_mm);   //保证init_mm不销毁
+	pgd_free(mm->pgd);   //释放PGD表项
+	destroy_context(mm);   //删除LDT
+	free_mm(mm);   //在mm上调用kmem_cache_free()，利用slab分配器将其释放
 }
 
 /*
@@ -283,7 +283,7 @@ void mmput(struct mm_struct *mm)   //mm_user计数减1
 		mmlist_nr--;减少mm计数
 		spin_unlock(&mmlist_lock);   //释放mmlist锁
 		exit_mmap(mm);   //移除所有相关的映射
-		mmdrop(mm);
+		mmdrop(mm);   //删除mm
 	}
 }
 
